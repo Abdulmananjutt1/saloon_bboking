@@ -1,0 +1,255 @@
+import { Router, Request, Response } from "express";
+import prisma from "../db";
+import { validateBooking, hasErrors } from "../validations";
+import { BookingStatus } from "@prisma/client";
+
+const router = Router();
+
+// Helper to map DB Booking to frontend structure
+function formatBooking(b: any) {
+  return {
+    ...b,
+    date: b.date.toISOString().split("T")[0],
+    status: b.status.toLowerCase(), // frontend expects lowercase (pending, confirmed, etc.)
+  };
+}
+
+// GET /bookings
+router.get("/", async (req: Request, res: Response) => {
+  try {
+    const { status, email, date } = req.query as Record<string, string>;
+    
+    const where: any = {};
+    if (status) {
+      where.status = status.toUpperCase() as BookingStatus;
+    }
+    if (email) {
+      where.customerEmail = { equals: email.toLowerCase(), mode: "insensitive" };
+    }
+    if (date) {
+      where.date = new Date(date);
+    }
+
+    const bookings = await prisma.booking.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+    });
+
+    res.json({
+      success: true,
+      data: bookings.map(formatBooking),
+      total: bookings.length,
+    });
+  } catch (err) {
+    console.error("[GET /bookings]", err);
+    res.status(500).json({ success: false, error: "Failed to fetch bookings" });
+  }
+});
+
+// GET /bookings/:id
+router.get("/:id", async (req: Request, res: Response) => {
+  try {
+    const booking = await prisma.booking.findUnique({
+      where: { id: req.params.id },
+    });
+    if (!booking) return res.status(404).json({ success: false, error: "Booking not found" });
+    res.json({ success: true, data: formatBooking(booking) });
+  } catch (err) {
+    res.status(500).json({ success: false, error: "Failed to fetch booking" });
+  }
+});
+
+// POST /bookings
+router.post("/", async (req: Request, res: Response) => {
+  try {
+    const body = req.body;
+
+    // Validate
+    const errors = validateBooking(body);
+    if (hasErrors(errors)) return res.status(422).json({ success: false, errors });
+
+    const isCustomPackage = body.serviceId === null || body.serviceId === "custom" || Array.isArray(body.customServices);
+
+    let serviceId: string;
+    let price: number;
+    let duration: number;
+    let serviceName: string;
+
+    if (isCustomPackage) {
+      // Use or create a "Custom Package" service entry
+      let customService = await prisma.service.findFirst({ where: { slug: "custom-package" } });
+      if (!customService) {
+        customService = await prisma.service.create({
+          data: {
+            name: "Custom Package",
+            slug: "custom-package",
+            category: "HAIRCUT", // placeholder category
+            description: "Custom service package",
+            duration: body.customPackageDuration ?? 60,
+            price: body.customPackageTotal ?? 0,
+            image: "",
+            popular: false,
+            forGender: "UNISEX",
+            isActive: true,
+          }
+        });
+      }
+      serviceId = customService.id;
+      price = body.customPackageTotal ?? 0;
+      duration = body.customPackageDuration ?? 60;
+      serviceName = "Custom Package";
+    } else {
+      // Verify service
+      const service = await prisma.service.findUnique({ where: { id: body.serviceId } });
+      if (!service) return res.status(422).json({ success: false, errors: { serviceId: "Invalid service" } });
+      serviceId = service.id;
+      price = service.price;
+      duration = service.duration;
+      serviceName = service.name;
+    }
+
+    // Verify stylist
+    const stylist = await prisma.stylist.findUnique({ where: { id: body.stylistId } });
+    if (!stylist) return res.status(422).json({ success: false, errors: { stylistId: "Invalid stylist" } });
+    if (!stylist.available) return res.status(422).json({ success: false, errors: { stylistId: "This stylist is currently unavailable" } });
+
+    // Time conflict check
+    const bookingDate = new Date(body.date);
+    const conflict = await prisma.booking.findFirst({
+      where: {
+        stylistId: body.stylistId,
+        date: bookingDate,
+        time: body.time,
+        status: { not: BookingStatus.CANCELLED }
+      }
+    });
+
+    if (conflict) {
+      return res.status(409).json({
+        success: false,
+        errors: { time: "This time slot is already booked. Please choose another." },
+      });
+    }
+
+    // Attempt to match associated user account by email (to link booking)
+    const associatedUser = await prisma.user.findUnique({
+      where: { email: body.email.trim().toLowerCase() }
+    });
+
+    // Upsert client
+    let client = await prisma.client.findUnique({
+      where: { email: body.email.trim().toLowerCase() }
+    });
+
+    if (client) {
+      client = await prisma.client.update({
+        where: { id: client.id },
+        data: {
+          name: body.name.trim(),
+          phone: body.phone.trim(),
+          totalVisits: client.totalVisits + 1,
+          totalSpent: client.totalSpent + price,
+          lastVisit: bookingDate
+        }
+      });
+    } else {
+      client = await prisma.client.create({
+        data: {
+          name: body.name.trim(),
+          email: body.email.trim().toLowerCase(),
+          phone: body.phone.trim(),
+          totalVisits: 1,
+          totalSpent: price,
+          lastVisit: bookingDate
+        }
+      });
+    }
+
+    // Generate unique short booking ID (e.g. GS-123456)
+    let bookingId = "";
+    let isUnique = false;
+    while (!isUnique) {
+      const num = Math.floor(100000 + Math.random() * 900000);
+      bookingId = `GS-${num}`;
+      const existing = await prisma.booking.findUnique({ where: { id: bookingId } });
+      if (!existing) {
+        isUnique = true;
+      }
+    }
+
+    // Build notes — append custom package details if present
+    let notes = body.notes?.trim() || null;
+    if (isCustomPackage) {
+      const customDetails = [
+        ...(body.customServices || []).length > 0 ? [`Services: ${body.customServices.join(", ")}`] : [],
+        ...(body.customItems || []).length > 0 ? [`Custom items: ${(body.customItems as any[]).map((i: any) => i.name).join(", ")}`] : [],
+      ].join(" | ");
+      notes = notes ? `${notes} | ${customDetails}` : customDetails || null;
+    }
+
+    // Create Booking
+    const booking = await prisma.booking.create({
+      data: {
+        id: bookingId,
+        customerName: body.name.trim(),
+        customerEmail: body.email.trim().toLowerCase(),
+        customerPhone: body.phone.trim(),
+        serviceId,
+        stylistId: stylist.id,
+        clientId: client.id,
+        userId: associatedUser?.id || null,
+        date: bookingDate,
+        time: body.time,
+        duration,
+        price,
+        notes,
+        status: BookingStatus.PENDING
+      }
+    });
+
+    res.status(201).json({ success: true, data: formatBooking(booking) });
+  } catch (err) {
+    console.error("[POST /bookings]", err);
+    res.status(500).json({ success: false, error: "Failed to create booking" });
+  }
+});
+
+// PATCH /bookings/:id — update status
+router.patch("/:id", async (req: Request, res: Response) => {
+  try {
+    const { status } = req.body as { status: string };
+    const valid = ["pending", "confirmed", "completed", "cancelled"];
+    if (!status || !valid.includes(status)) {
+      return res.status(422).json({ success: false, error: `Status must be one of: ${valid.join(", ")}` });
+    }
+
+    const booking = await prisma.booking.findUnique({ where: { id: req.params.id } });
+    if (!booking) return res.status(404).json({ success: false, error: "Booking not found" });
+
+    const updated = await prisma.booking.update({
+      where: { id: req.params.id },
+      data: { status: status.toUpperCase() as BookingStatus },
+    });
+
+    res.json({ success: true, data: formatBooking(updated) });
+  } catch (err) {
+    console.error("[PATCH /bookings/:id]", err);
+    res.status(500).json({ success: false, error: "Failed to update booking" });
+  }
+});
+
+// DELETE /bookings/:id
+router.delete("/:id", async (req: Request, res: Response) => {
+  try {
+    const booking = await prisma.booking.findUnique({ where: { id: req.params.id } });
+    if (!booking) return res.status(404).json({ success: false, error: "Booking not found" });
+
+    await prisma.booking.delete({ where: { id: req.params.id } });
+    res.json({ success: true, message: "Booking deleted" });
+  } catch (err) {
+    console.error("[DELETE /bookings/:id]", err);
+    res.status(500).json({ success: false, error: "Failed to delete booking" });
+  }
+});
+
+export default router;
