@@ -20,8 +20,8 @@ router.get("/", async (_req: Request, res: Response) => {
     ]);
 
     const totalRevenue = allBookings
-      .filter((b) => b.status === "CONFIRMED" || b.status === "COMPLETED")
-      .reduce((sum, b) => sum + (b.price ?? 0), 0);
+      .filter((b: any) => b.status === "CONFIRMED" || b.status === "COMPLETED")
+      .reduce((sum: number, b: any) => sum + (b.price ?? 0), 0);
 
     // ── This month vs last month ───────────────────────────────────────
     const [thisMonthBookings, lastMonthBookings] = await Promise.all([
@@ -55,8 +55,8 @@ router.get("/", async (_req: Request, res: Response) => {
       }),
     ]);
 
-    const thisMonthRevenue = thisMonthRevBookings.reduce((s, b) => s + (b.price ?? 0), 0);
-    const lastMonthRevenue = lastMonthRevBookings.reduce((s, b) => s + (b.price ?? 0), 0);
+    const thisMonthRevenue = thisMonthRevBookings.reduce((s: number, b: any) => s + (b.price ?? 0), 0);
+    const lastMonthRevenue = lastMonthRevBookings.reduce((s: number, b: any) => s + (b.price ?? 0), 0);
 
     function growthPct(current: number, previous: number) {
       if (previous === 0) return current > 0 ? 100 : 0;
@@ -90,7 +90,7 @@ router.get("/", async (_req: Request, res: Response) => {
         revenueGrowth:  growthPct(thisMonthRevenue, lastMonthRevenue),
         bookingsGrowth: growthPct(thisMonthBookings, lastMonthBookings),
         clientGrowth:   growthPct(thisMonthClients, lastMonthClients),
-        recentBookings: recentBookings.map((b) => ({
+        recentBookings: recentBookings.map((b: any) => ({
           id:            b.id,
           customerName:  b.customerName,
           customerEmail: b.customerEmail,
@@ -101,7 +101,7 @@ router.get("/", async (_req: Request, res: Response) => {
           price:         b.price,
           status:        b.status.toLowerCase(),
         })),
-        stylists: stylists.map((s) => ({
+        stylists: stylists.map((s: any) => ({
           id:           s.id,
           name:         s.name,
           role:         s.role ?? "Stylist",
@@ -133,8 +133,8 @@ router.get("/analytics", async (_req: Request, res: Response) => {
       });
 
       const revenue = monthBookings
-        .filter((b) => b.status === "CONFIRMED" || b.status === "COMPLETED")
-        .reduce((sum, b) => sum + (b.price ?? 0), 0);
+        .filter((b: any) => b.status === "CONFIRMED" || b.status === "COMPLETED")
+        .reduce((sum: number, b: any) => sum + (b.price ?? 0), 0);
 
       monthlyData.push({
         month:    start.toLocaleDateString("en-US", { month: "short" }),
@@ -164,7 +164,7 @@ router.get("/analytics", async (_req: Request, res: Response) => {
     });
 
     const topServices = await Promise.all(
-      serviceBookings.map(async (sb) => {
+      serviceBookings.map(async (sb: any) => {
         const service = await prisma.service.findUnique({
           where: { id: sb.serviceId },
           select: { name: true },
@@ -184,11 +184,11 @@ router.get("/analytics", async (_req: Request, res: Response) => {
           where: { status: { in: ["CONFIRMED", "COMPLETED"] } },
           _sum: { price: true },
         })
-        .then((r) => r._sum.price ?? 0),
+        .then((r: any) => r._sum.price ?? 0),
       prisma.user.count({ where: { role: "CLIENT" } }),
       prisma.stylist
         .aggregate({ _avg: { rating: true } })
-        .then((r) => Math.round((r._avg.rating ?? 0) * 10) / 10),
+        .then((r: any) => Math.round((r._avg.rating ?? 0) * 10) / 10),
     ]);
 
     res.json({

@@ -18,7 +18,7 @@ router.get("/rooms", async (_req: Request, res: Response) => {
 
     // For each room, fetch the last message text + sender
     const roomsWithPreview = await Promise.all(
-      rooms.map(async (room) => {
+      rooms.map(async (room: any) => {
         const lastMsg = await prisma.chatMessage.findFirst({
           where: { roomId: room.roomId },
           orderBy: { createdAt: "desc" },
