@@ -33,7 +33,8 @@ export function useNotifications() {
   useEffect(() => {
     // 1. Seed with recent bookings from stats endpoint
     statsApi.getStats()
-      .then((json: StatsResponse) => {
+      .then((res) => {
+        const json = res as StatsResponse;
         if (json.success && json.data?.recentBookings) {
           const initial: NotificationItem[] = json.data.recentBookings
             .slice(0, 3)

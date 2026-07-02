@@ -105,7 +105,7 @@ export function useAdminChat() {
     setLoadingMsgs(true);
     setMessages([]);
     chatApi.getMessages(selectedRoom.roomId)
-      .then((json: { success: boolean; data: ChatMessage[] }) => { if (json.success) setMessages(json.data); })
+      .then((res) => { const json = res as { success: boolean; data: ChatMessage[] }; if (json.success) setMessages(json.data); })
       .catch(() => {})
       .finally(() => setLoadingMsgs(false));
     inputRef.current?.focus();
@@ -137,7 +137,8 @@ export function useAdminChat() {
       // REST fallback when WS is not available
       setSending(true);
       chatApi.sendMessage(payload)
-        .then((json: { success: boolean; data: ChatMessage }) => {
+        .then((res) => {
+          const json = res as { success: boolean; data: ChatMessage };
           if (json.success) setMessages((prev) => [...prev, json.data]);
         })
         .finally(() => { setSending(false); setNewMsg(""); });

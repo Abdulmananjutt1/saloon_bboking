@@ -94,7 +94,8 @@ export function useAdminUnread() {
 
     // 3. Background: persist last-read count so it survives page refresh
     chatApi.getMessages(roomId)
-      .then((json: { success: boolean; data: unknown[] }) => {
+      .then((res) => {
+        const json = res as { success: boolean; data: unknown[] };
         if (json.success) {
           const count = json.data.length;
           localStorage.setItem(`${LAST_READ_PREFIX}${roomId}`, String(count));

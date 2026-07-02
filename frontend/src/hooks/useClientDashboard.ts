@@ -198,7 +198,8 @@ export function useClientDashboard() {
     } else {
       // REST fallback
       chatApi.sendMessage(payload)
-        .then((json: ApiResponse<ChatMessage>) => {
+        .then((res) => {
+          const json = res as ApiResponse<ChatMessage>;
           if (json.success) setChatMessages((prev) => [...prev, json.data]);
         });
     }

@@ -9,7 +9,7 @@ import { APP_NAME, ROUTES } from "@/constants";
 import { validateLoginForm, hasErrors, type ValidationError } from "@/lib/validations";
 import { ToastContainer, useToast } from "@/components/ui/Toast";
 import { authApi } from "@/lib/api";
-import { saveSession, pushSessionToast, isAdmin } from "@/lib/session";
+import { saveSession, pushSessionToast, isAdmin, type SessionUser } from "@/lib/session";
 
 function LoginPageInner() {
   const searchParams = useSearchParams();
@@ -54,7 +54,7 @@ function LoginPageInner() {
     setLoading(true);
 
     try {
-      const data = await authApi.login(form) as { success: boolean; data: { name: string; role: string }; token?: string; error?: string; errors?: Record<string, string> };
+      const data = await authApi.login(form) as { success: boolean; data: SessionUser; token?: string; error?: string; errors?: Record<string, string> };
 
       if (data.errors?.general) { setApiError(data.errors.general); return; }
       if (data.errors)           { setErrors(data.errors); return; }

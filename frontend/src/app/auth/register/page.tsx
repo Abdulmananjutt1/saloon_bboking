@@ -11,7 +11,7 @@ import {
 import { APP_NAME, ROUTES } from "@/constants";
 import { validateRegisterForm, hasErrors, type ValidationError } from "@/lib/validations";
 import { authApi } from "@/lib/api";
-import { saveSession } from "@/lib/session";
+import { saveSession, type SessionUser } from "@/lib/session";
 
 const PERKS = [
   "Instant booking confirmation — no waiting",
@@ -63,7 +63,7 @@ function RegisterPageInner() {
     setLoading(true);
 
     try {
-      const data = await authApi.register(form) as { success: boolean; data: { name: string; role: string }; token?: string; error?: string; errors?: Record<string, string> };
+      const data = await authApi.register(form) as { success: boolean; data: SessionUser; token?: string; error?: string; errors?: Record<string, string> };
 
       if (data.errors) { setErrors(data.errors); return; }
       if (!data.success) { setApiError(data.error ?? "Registration failed. Please try again."); return; }
