@@ -7,7 +7,7 @@ import { ROUTES, APP_PHONE, APP_EMAIL, APP_ADDRESS, APP_HOURS } from "@/constant
 import {
   Phone, Mail, MapPin, Clock, MessageSquare,
   Send, Check, Facebook, Instagram, Youtube,
-  Twitter, ArrowRight, Scissors
+  Twitter, Scissors
 } from "lucide-react";
 
 export const metadata: Metadata = {
@@ -56,7 +56,7 @@ export default function ContactPage() {
               }}>
                 <MessageSquare style={{ width: 14, height: 14, color: "var(--gold)" }} />
                 <span style={{ fontSize: "0.7rem", fontWeight: 700, color: "var(--gold-light)", textTransform: "uppercase", letterSpacing: "0.2em" }}>
-                  We're Here to Help
+                  We&apos;re Here to Help
                 </span>
               </div>
 
@@ -109,7 +109,7 @@ export default function ContactPage() {
               <div className="sal-glass" style={{ padding: 40, borderRadius: 20 }}>
                 <h2 className="sal-h2" style={{ marginBottom: 8 }}>Send a Message</h2>
                 <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginBottom: 32 }}>
-                  Fill out the form and we'll get back to you ASAP.
+                  Fill out the form and we&apos;ll get back to you ASAP.
                 </p>
 
                 <form style={{ display: "flex", flexDirection: "column", gap: 20 }}>

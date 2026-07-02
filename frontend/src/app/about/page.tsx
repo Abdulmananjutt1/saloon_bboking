@@ -61,7 +61,7 @@ export default function AboutPage() {
               }}>
                 <Sparkles style={{ width: 14, height: 14, color: "var(--gold)" }} />
                 <span style={{ fontSize: "0.7rem", fontWeight: 700, color: "var(--gold-light)", textTransform: "uppercase", letterSpacing: "0.2em" }}>
-                  Since 2015 · Islamabad's #1
+                  Since 2015 · Islamabad&apos;s #1
                 </span>
               </div>
 
@@ -72,7 +72,7 @@ export default function AboutPage() {
               </h1>
 
               <p className="anim-up anim-d3" style={{ fontSize: "0.95rem", color: "var(--text-secondary)", lineHeight: 1.8, marginBottom: 36, maxWidth: 600 }}>
-                At Glamour Studio, we believe beauty is an art form and self-care is a necessity. For over a decade, we've been transforming clients with precision cuts, vibrant colors, and rejuvenating treatments in a space designed to inspire confidence and relaxation.
+                At Glamour Studio, we believe beauty is an art form and self-care is a necessity. For over a decade, we&apos;ve been transforming clients with precision cuts, vibrant colors, and rejuvenating treatments in a space designed to inspire confidence and relaxation.
               </p>
 
               {/* Stats row */}
@@ -103,10 +103,10 @@ export default function AboutPage() {
                   <span className="text-gold">To a Premier Destination</span>
                 </h2>
                 <p style={{ color: "var(--text-secondary)", fontSize: "0.92rem", lineHeight: 1.85, marginBottom: 24 }}>
-                  What started as a single-chair salon in 2015 has grown into Islamabad's most sought-after beauty destination. Founded by master stylist Ayesha Khan, our vision was simple: create a space where artistry, luxury, and personalized care come together.
+                  What started as a single-chair salon in 2015 has grown into Islamabad&apos;s most sought-after beauty destination. Founded by master stylist Ayesha Khan, our vision was simple: create a space where artistry, luxury, and personalized care come together.
                 </p>
                 <p style={{ color: "var(--text-secondary)", fontSize: "0.92rem", lineHeight: 1.85, marginBottom: 32 }}>
-                  Today, we're a team of 15+ certified specialists offering 50+ services, but our core philosophy remains unchanged — every client deserves to feel seen, heard, and beautifully transformed.
+                  Today, we&apos;re a team of 15+ certified specialists offering 50+ services, but our core philosophy remains unchanged — every client deserves to feel seen, heard, and beautifully transformed.
                 </p>
 
                 {/* Founder signature */}
@@ -318,7 +318,7 @@ export default function AboutPage() {
                 Stories from <span className="text-gold">Happy Clients</span>
               </h2>
               <p style={{ color: "var(--text-secondary)", fontSize: "0.92rem", maxWidth: 520, margin: "0 auto" }}>
-                Join 8,500+ satisfied clients who've experienced the Glamour Studio difference.
+                Join 8,500+ satisfied clients who&apos;ve experienced the Glamour Studio difference.
               </p>
             </div>
 
@@ -393,7 +393,7 @@ export default function AboutPage() {
               Difference
             </h2>
             <p style={{ color: "var(--text-secondary)", fontSize: "1rem", maxWidth: 500, margin: "0 auto 40px", lineHeight: 1.8 }}>
-              Ready to transform? Book your appointment today and discover why we're Islamabad's most trusted salon.
+              Ready to transform? Book your appointment today and discover why we&apos;re Islamabad&apos;s most trusted salon.
             </p>
 
             <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap", marginBottom: 28 }}>

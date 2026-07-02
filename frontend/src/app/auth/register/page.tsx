@@ -63,7 +63,7 @@ function RegisterPageInner() {
     setLoading(true);
 
     try {
-      const data = await authApi.register(form) as any;
+      const data = await authApi.register(form) as { success: boolean; data: { name: string; role: string }; token?: string; error?: string; errors?: Record<string, string> };
 
       if (data.errors) { setErrors(data.errors); return; }
       if (!data.success) { setApiError(data.error ?? "Registration failed. Please try again."); return; }

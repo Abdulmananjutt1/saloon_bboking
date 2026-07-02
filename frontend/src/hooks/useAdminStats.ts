@@ -38,7 +38,7 @@ export function useAdminStats() {
     if (isRefresh) setRefreshing(true);
     else setLoading(true);
     try {
-      const data = await statsApi.getStats() as any;
+      const data = await statsApi.getStats() as { success: boolean; data: AdminStatsData };
       if (data.success) setStats(data.data);
     } catch {
       // silently fail — stale data stays

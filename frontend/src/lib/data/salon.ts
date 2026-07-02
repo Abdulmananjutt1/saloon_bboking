@@ -1,4 +1,4 @@
-import type { Service, Stylist, Booking, Review, GalleryImage } from "@/types";
+import type { Service, Stylist, Review, GalleryImage } from "@/types";
 
 export const SERVICES: Service[] = [
   {

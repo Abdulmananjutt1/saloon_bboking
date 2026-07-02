@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef } from "react";
+import NextImage from "next/image";
 import { UploadCloud, Image as ImageIcon, X } from "lucide-react";
 
 interface ImageUploadProps {
@@ -90,10 +91,11 @@ export default function ImageUpload({ onImageSelected, className = "" }: ImageUp
 
         {preview ? (
           <div className="absolute inset-0 w-full h-full">
-            <img 
+            <NextImage 
               src={preview} 
               alt="Preview" 
-              className="w-full h-full object-cover rounded-3xl"
+              fill
+              className="object-cover rounded-3xl"
             />
             <div className="absolute inset-0 bg-dark-900/40 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
               <button

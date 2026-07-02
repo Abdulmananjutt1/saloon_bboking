@@ -6,7 +6,7 @@ import Footer from "@/components/layout/Footer";
 import { ROUTES, SERVICE_CATEGORIES } from "@/constants";
 import { SERVICES } from "@/lib/data/salon";
 import { formatPrice, formatDuration } from "@/lib/utils";
-import { Clock, ChevronRight, Scissors, Sparkles, Calendar, ArrowRight } from "lucide-react";
+import { Clock, Scissors, Sparkles, Calendar, ArrowRight } from "lucide-react";
 import type { ServiceCategory } from "@/types";
 
 export const metadata: Metadata = {

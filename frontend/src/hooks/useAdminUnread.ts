@@ -30,11 +30,11 @@ export function useAdminUnread() {
   // ── Compute unread from rooms API ─────────────────────────────────────────
   const computeFromRooms = useCallback(async () => {
     try {
-      const json = await chatApi.getRooms() as any;
+      const json = await chatApi.getRooms() as { success: boolean; data: { roomId: string; messageCount: number; lastSender: string }[] };
       if (!json.success) return;
 
       const map: UnreadMap = {};
-      for (const room of json.data as { roomId: string; messageCount: number; lastSender: string }[]) {
+      for (const room of json.data) {
         const key      = `${LAST_READ_PREFIX}${room.roomId}`;
         const lastRead = parseInt(localStorage.getItem(key) ?? "0", 10);
         const unread   = Math.max(0, room.messageCount - lastRead);
@@ -94,9 +94,9 @@ export function useAdminUnread() {
 
     // 3. Background: persist last-read count so it survives page refresh
     chatApi.getMessages(roomId)
-      .then((json: any) => {
+      .then((json: { success: boolean; data: unknown[] }) => {
         if (json.success) {
-          const count = (json.data as unknown[]).length;
+          const count = json.data.length;
           localStorage.setItem(`${LAST_READ_PREFIX}${roomId}`, String(count));
         }
       })

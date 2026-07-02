@@ -21,6 +21,11 @@ export interface AnalyticsData {
   topServices: { name: string; bookings: number; revenue: number }[];
 }
 
+interface AnalyticsResponse {
+  success: boolean;
+  data: AnalyticsData;
+}
+
 export function useAnalytics() {
   const [data, setData]       = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -29,7 +34,7 @@ export function useAnalytics() {
   useEffect(() => {
     const load = async () => {
       try {
-        const json = await statsApi.getAnalytics() as any;
+        const json = await statsApi.getAnalytics() as AnalyticsResponse;
         if (json.success) setData(json.data);
         else setError("Failed to load analytics data.");
       } catch {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { ROUTES, type BookingStatus } from "@/constants";
 import { bookingsApi, chatApi } from "@/lib/api";
 import { buildWsUrl } from "@/lib/ws";
@@ -32,6 +32,12 @@ export interface ChatMessage {
   createdAt: string;
 }
 
+interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  error?: string;
+}
+
 type WsStatus = "connecting" | "connected" | "disconnected";
 
 // LocalStorage key for persisting last-read message count per client
@@ -55,6 +61,22 @@ export function useClientDashboard() {
   const ws         = useRef<WebSocket | null>(null);
   const chatEndRef = useRef<HTMLDivElement | null>(null);
 
+  // ── Data fetchers (defined before useEffect that calls them) ─────────────────
+  const fetchBookings = useCallback(async (email: string) => {
+    try {
+      const data = await bookingsApi.getAll(undefined, email) as ApiResponse<ClientBooking[]>;
+      if (data.success) setBookings(data.data);
+    } catch { /* ignore */ }
+    finally { setLoading(false); }
+  }, []);
+
+  const fetchChatHistory = useCallback(async (email: string) => {
+    try {
+      const data = await chatApi.getMessages(email) as ApiResponse<ChatMessage[]>;
+      if (data.success) setChatMessages(data.data);
+    } catch { /* ignore */ }
+  }, []);
+
   // ── Bootstrap: read user from localStorage, redirect if not logged in ────────
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -64,16 +86,17 @@ export function useClientDashboard() {
       window.location.href = ROUTES.LOGIN;
       return;
     }
-    setUser(parsed);
+    const id = requestAnimationFrame(() => setUser(parsed));
     fetchBookings(parsed.email);
     fetchChatHistory(parsed.email);
-  }, []);
+    return () => cancelAnimationFrame(id);
+  }, [fetchBookings, fetchChatHistory]);
 
   // ── WebSocket (client role) ──────────────────────────────────────────────────
   useEffect(() => {
     if (!user) return;
 
-    setWsStatus("connecting");
+    const id = requestAnimationFrame(() => setWsStatus("connecting"));
     const sock = new WebSocket(
       `${buildWsUrl()}?role=client&roomId=${encodeURIComponent(user.email)}&name=${encodeURIComponent(user.name)}`
     );
@@ -85,7 +108,7 @@ export function useClientDashboard() {
 
     sock.onmessage = (e) => {
       try {
-        const payload = JSON.parse(e.data);
+        const payload = JSON.parse(e.data) as ChatMessage & { type: string };
         if (payload.type === "message") {
           setChatMessages((prev) => {
             if (prev.some((m) => m.id === payload.id)) return prev;
@@ -99,7 +122,10 @@ export function useClientDashboard() {
       } catch { /* ignore */ }
     };
 
-    return () => sock.close();
+    return () => {
+      cancelAnimationFrame(id);
+      sock.close();
+    };
   }, [user]);
 
   // ── Auto-scroll chat ─────────────────────────────────────────────────────────
@@ -134,28 +160,12 @@ export function useClientDashboard() {
     chatOpenRef.current = false;
   };
 
-  // ── Data fetchers ────────────────────────────────────────────────────────────
-  const fetchBookings = async (email: string) => {
-    try {
-      const data = await bookingsApi.getAll(undefined, email) as any;
-      if (data.success) setBookings(data.data);
-    } catch { /* ignore */ }
-    finally { setLoading(false); }
-  };
-
-  const fetchChatHistory = async (email: string) => {
-    try {
-      const data = await chatApi.getMessages(email) as any;
-      if (data.success) setChatMessages(data.data);
-    } catch { /* ignore */ }
-  };
-
   // ── Actions ──────────────────────────────────────────────────────────────────
   const cancelBooking = async (id: string) => {
     if (!confirm("Are you sure you want to cancel this appointment?")) return;
     setCancellingId(id);
     try {
-      const data = await bookingsApi.updateStatus(id, "cancelled") as any;
+      const data = await bookingsApi.updateStatus(id, "cancelled") as ApiResponse<ClientBooking>;
       if (data.success) {
         setBookings((prev) =>
           prev.map((b) => (b.id === id ? { ...b, status: "cancelled" } : b))
@@ -188,7 +198,7 @@ export function useClientDashboard() {
     } else {
       // REST fallback
       chatApi.sendMessage(payload)
-        .then((json: any) => {
+        .then((json: ApiResponse<ChatMessage>) => {
           if (json.success) setChatMessages((prev) => [...prev, json.data]);
         });
     }

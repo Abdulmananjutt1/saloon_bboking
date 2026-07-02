@@ -45,7 +45,7 @@ export function useAdminChat() {
   // ── Fetch room list ──────────────────────────────────────────────────────────
   const fetchRooms = useCallback(async () => {
     try {
-      const json = await chatApi.getRooms() as any;
+      const json = await chatApi.getRooms() as { success: boolean; data: ChatRoom[] };
       if (json.success) setRooms(json.data);
     } catch { /* silent */ }
     finally { setLoadingRooms(false); }
@@ -105,7 +105,7 @@ export function useAdminChat() {
     setLoadingMsgs(true);
     setMessages([]);
     chatApi.getMessages(selectedRoom.roomId)
-      .then((json: any) => { if (json.success) setMessages(json.data); })
+      .then((json: { success: boolean; data: ChatMessage[] }) => { if (json.success) setMessages(json.data); })
       .catch(() => {})
       .finally(() => setLoadingMsgs(false));
     inputRef.current?.focus();
@@ -137,7 +137,7 @@ export function useAdminChat() {
       // REST fallback when WS is not available
       setSending(true);
       chatApi.sendMessage(payload)
-        .then((json: any) => {
+        .then((json: { success: boolean; data: ChatMessage }) => {
           if (json.success) setMessages((prev) => [...prev, json.data]);
         })
         .finally(() => { setSending(false); setNewMsg(""); });

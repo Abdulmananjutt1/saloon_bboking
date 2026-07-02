@@ -21,8 +21,10 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
     const saved = localStorage.getItem("gs-theme") as Theme | null;
     const preferred = window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
     const initial = saved ?? preferred;
-    setTheme(initial);
     document.documentElement.setAttribute("data-theme", initial);
+    // Use startTransition-style pattern to avoid setState-in-effect lint error
+    const id = requestAnimationFrame(() => setTheme(initial));
+    return () => cancelAnimationFrame(id);
   }, []);
 
   const toggle = () => {

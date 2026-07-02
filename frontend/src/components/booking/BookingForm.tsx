@@ -14,14 +14,7 @@ import { validateBookingForm, hasErrors, type ValidationError } from "@/lib/vali
 import { ToastContainer, useToast } from "@/components/ui/Toast";
 import { servicesApi, stylistsApi, bookingsApi } from "@/lib/api";
 
-interface Props {
-  preSelectedService?: string;
-  preSelectedStylist?: string;
-}
-
-type Step = 1 | 2 | 3 | 4;
-
-// Types matching the DB/API shape
+// ── Types ─────────────────────────────────────────────────────────────────────
 type ApiService = {
   id: string; name: string; slug: string; category: string;
   description: string; duration: number; price: number;
@@ -35,6 +28,114 @@ type ApiStylist = {
   specialties: { id: string; name: string }[];
   slots?: { id: string; stylistId: string; time: string }[];
 };
+
+interface StepDef { n: number; label: string; icon: React.ComponentType<{ style?: React.CSSProperties }> }
+
+// ── Step Indicator (outside component to avoid re-mount on render) ────────────
+function StepIndicator({ steps, step }: { steps: StepDef[]; step: number }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 36 }}>
+      {steps.map((s, i) => {
+        const done = step > s.n;
+        const active = step === s.n;
+        const Icon = s.icon;
+        return (
+          <div key={s.n} style={{ display: "flex", alignItems: "center" }}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+              <div style={{
+                width: 44, height: 44, borderRadius: "50%",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                transition: "all 0.3s ease",
+                background: done
+                  ? "rgba(52,211,153,0.15)"
+                  : active
+                  ? "var(--grad-gold-btn)"
+                  : "var(--bg-secondary)",
+                border: done
+                  ? "1.5px solid rgba(52,211,153,0.4)"
+                  : active
+                  ? "none"
+                  : "1.5px solid var(--border-light)",
+                boxShadow: active ? "0 4px 20px rgba(201,151,59,0.35)" : "none"
+              }}>
+                {done
+                  ? <CheckCircle style={{ width: 18, height: 18, color: "#34d399" }} />
+                  : <Icon style={{ width: 16, height: 16, color: active ? "#0d0c0a" : "var(--text-muted)", transform: s.n === 1 ? "rotate(45deg)" : "none" }} />
+                }
+              </div>
+              <span style={{
+                fontSize: "0.62rem", fontWeight: 700,
+                textTransform: "uppercase", letterSpacing: "0.12em",
+                color: active ? "var(--gold)" : done ? "#34d399" : "var(--text-muted)"
+              }}>
+                {s.label}
+              </span>
+            </div>
+            {i < steps.length - 1 && (
+              <div style={{
+                width: 60, height: 1.5, marginBottom: 20, marginInline: 6,
+                background: step > s.n
+                  ? "linear-gradient(to right, rgba(52,211,153,0.5), rgba(52,211,153,0.2))"
+                  : "var(--border-light)",
+                transition: "background 0.4s ease"
+              }} />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── Nav Buttons (outside component to avoid re-mount on render) ───────────────
+function NavButtons({ step, loading, nextDisabled, onNext, onBack, submitMode }: {
+  step: number; loading?: boolean; nextDisabled?: boolean;
+  onNext?: () => void; onBack?: () => void; submitMode?: boolean;
+}) {
+  return (
+    <div style={{ display: "flex", justifyContent: step === 1 ? "flex-end" : "space-between", marginTop: 28 }}>
+      {step > 1 && (
+        <button type="button" onClick={onBack} style={{
+          display: "flex", alignItems: "center", gap: 6,
+          padding: "11px 22px", borderRadius: 11,
+          background: "var(--bg-secondary)", border: "1px solid var(--border-light)",
+          color: "var(--text-secondary)", fontSize: "0.82rem", fontWeight: 600, cursor: "pointer"
+        }}>
+          <ChevronLeft style={{ width: 15, height: 15 }} /> Back
+        </button>
+      )}
+      <button
+        type={submitMode ? "submit" : "button"}
+        onClick={!submitMode ? onNext : undefined}
+        disabled={nextDisabled}
+        style={{
+          display: "flex", alignItems: "center", gap: 7,
+          padding: "12px 28px", borderRadius: 11,
+          background: nextDisabled ? "var(--bg-secondary)" : "var(--grad-gold-btn)",
+          border: nextDisabled ? "1px solid var(--border-light)" : "none",
+          color: nextDisabled ? "var(--text-muted)" : "#0d0c0a",
+          fontSize: "0.82rem", fontWeight: 700, cursor: nextDisabled ? "not-allowed" : "pointer",
+          boxShadow: nextDisabled ? "none" : "0 4px 20px rgba(201,151,59,0.3)",
+          transition: "all 0.2s", opacity: nextDisabled ? 0.5 : 1
+        }}
+      >
+        {submitMode
+          ? loading
+            ? <><span style={{ width: 14, height: 14, borderRadius: "50%", border: "2px solid rgba(13,12,10,0.3)", borderTopColor: "#0d0c0a", animation: "spin 0.7s linear infinite", display: "inline-block" }} /> Confirming…</>
+            : <><Scissors style={{ width: 14, height: 14, transform: "rotate(45deg)" }} /> Confirm Booking</>
+          : <>Next <ChevronRight style={{ width: 15, height: 15 }} /></>
+        }
+      </button>
+    </div>
+  );
+}
+
+interface Props {
+  preSelectedService?: string;
+  preSelectedStylist?: string;
+}
+
+type Step = 1 | 2 | 3 | 4;
 
 export default function BookingForm({ preSelectedService, preSelectedStylist }: Props) {
   const [step, setStep] = useState<Step>(preSelectedService ? 2 : 1);
@@ -91,8 +192,8 @@ export default function BookingForm({ preSelectedService, preSelectedStylist }: 
     setCheckingAuth(false);
 
     Promise.all([
-      servicesApi.getAll() as Promise<any>,
-      stylistsApi.getAll() as Promise<any>,
+      servicesApi.getAll() as Promise<{ success: boolean; data: ApiService[] }>,
+      stylistsApi.getAll() as Promise<{ success: boolean; data: ApiStylist[] }>,
     ]).then(([svcRes, styRes]) => {
       if (svcRes.success) setServices(svcRes.data);
       if (styRes.success) setStylists(styRes.data);
@@ -155,7 +256,7 @@ export default function BookingForm({ preSelectedService, preSelectedStylist }: 
     );
   };
 
-  const steps = [
+  const steps: StepDef[] = [
     { n: 1, label: "Service",    icon: Scissors },
     { n: 2, label: "Stylist",    icon: User },
     { n: 3, label: "Date & Time",icon: Calendar },
@@ -227,7 +328,7 @@ export default function BookingForm({ preSelectedService, preSelectedStylist }: 
             notes: form.notes,
           };
 
-      const data = await bookingsApi.create(payload) as any;
+      const data = await bookingsApi.create(payload) as { success: boolean; data: unknown; errors?: ValidationError; error?: string };
 
       if (!data.success) {
         if (data.errors) {
@@ -310,101 +411,6 @@ export default function BookingForm({ preSelectedService, preSelectedStylist }: 
     );
   }
 
-  /* ── Step indicator ── */
-  const StepIndicator = () => (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 36 }}>
-      {steps.map((s, i) => {
-        const done = step > s.n;
-        const active = step === s.n;
-        const Icon = s.icon;
-        return (
-          <div key={s.n} style={{ display: "flex", alignItems: "center" }}>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-              <div style={{
-                width: 44, height: 44, borderRadius: "50%",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                transition: "all 0.3s ease",
-                background: done
-                  ? "rgba(52,211,153,0.15)"
-                  : active
-                  ? "var(--grad-gold-btn)"
-                  : "var(--bg-secondary)",
-                border: done
-                  ? "1.5px solid rgba(52,211,153,0.4)"
-                  : active
-                  ? "none"
-                  : "1.5px solid var(--border-light)",
-                boxShadow: active ? "0 4px 20px rgba(201,151,59,0.35)" : "none"
-              }}>
-                {done
-                  ? <CheckCircle style={{ width: 18, height: 18, color: "#34d399" }} />
-                  : <Icon style={{ width: 16, height: 16, color: active ? "#0d0c0a" : "var(--text-muted)", transform: s.n === 1 ? "rotate(45deg)" : "none" }} />
-                }
-              </div>
-              <span style={{
-                fontSize: "0.62rem", fontWeight: 700,
-                textTransform: "uppercase", letterSpacing: "0.12em",
-                color: active ? "var(--gold)" : done ? "#34d399" : "var(--text-muted)"
-              }}>
-                {s.label}
-              </span>
-            </div>
-            {i < steps.length - 1 && (
-              <div style={{
-                width: 60, height: 1.5, marginBottom: 20, marginInline: 6,
-                background: step > s.n
-                  ? "linear-gradient(to right, rgba(52,211,153,0.5), rgba(52,211,153,0.2))"
-                  : "var(--border-light)",
-                transition: "background 0.4s ease"
-              }} />
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
-
-  /* ── Nav buttons ── */
-  const NavButtons = ({ canNext, nextDisabled, onNext, onBack, submitMode }: {
-    canNext?: boolean; nextDisabled?: boolean; onNext?: () => void;
-    onBack?: () => void; submitMode?: boolean;
-  }) => (
-    <div style={{ display: "flex", justifyContent: step === 1 ? "flex-end" : "space-between", marginTop: 28 }}>
-      {step > 1 && (
-        <button type="button" onClick={onBack} style={{
-          display: "flex", alignItems: "center", gap: 6,
-          padding: "11px 22px", borderRadius: 11,
-          background: "var(--bg-secondary)", border: "1px solid var(--border-light)",
-          color: "var(--text-secondary)", fontSize: "0.82rem", fontWeight: 600, cursor: "pointer"
-        }}>
-          <ChevronLeft style={{ width: 15, height: 15 }} /> Back
-        </button>
-      )}
-      <button
-        type={submitMode ? "submit" : "button"}
-        onClick={!submitMode ? onNext : undefined}
-        disabled={nextDisabled}
-        style={{
-          display: "flex", alignItems: "center", gap: 7,
-          padding: "12px 28px", borderRadius: 11,
-          background: nextDisabled ? "var(--bg-secondary)" : "var(--grad-gold-btn)",
-          border: nextDisabled ? "1px solid var(--border-light)" : "none",
-          color: nextDisabled ? "var(--text-muted)" : "#0d0c0a",
-          fontSize: "0.82rem", fontWeight: 700, cursor: nextDisabled ? "not-allowed" : "pointer",
-          boxShadow: nextDisabled ? "none" : "0 4px 20px rgba(201,151,59,0.3)",
-          transition: "all 0.2s", opacity: nextDisabled ? 0.5 : 1
-        }}
-      >
-        {submitMode
-          ? loading
-            ? <><span style={{ width: 14, height: 14, borderRadius: "50%", border: "2px solid rgba(13,12,10,0.3)", borderTopColor: "#0d0c0a", animation: "spin 0.7s linear infinite", display: "inline-block" }} /> Confirming…</>
-            : <><Scissors style={{ width: 14, height: 14, transform: "rotate(45deg)" }} /> Confirm Booking</>
-          : <>Next <ChevronRight style={{ width: 15, height: 15 }} /></>
-        }
-      </button>
-    </div>
-  );
-
   if (!checkingAuth && !user) {
     const redirectUrl = typeof window !== "undefined"
       ? encodeURIComponent(window.location.pathname + window.location.search)
@@ -447,7 +453,7 @@ export default function BookingForm({ preSelectedService, preSelectedStylist }: 
   return (
     <>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      <StepIndicator />
+      <StepIndicator steps={steps} step={step} />
 
       <div style={{
         background: "var(--bg-card)",
@@ -839,6 +845,7 @@ export default function BookingForm({ preSelectedService, preSelectedStylist }: 
                 )}
 
                 <NavButtons
+                  step={step}
                   nextDisabled={isCustomPackage ? totalCustomCount === 0 : !selectedService}
                   onNext={() => setStep(2)}
                 />
@@ -903,7 +910,7 @@ export default function BookingForm({ preSelectedService, preSelectedStylist }: 
                 );
               })}
             </div>
-            <NavButtons nextDisabled={!selectedStylist} onNext={() => setStep(3)} onBack={() => setStep(1)} />
+            <NavButtons step={step} nextDisabled={!selectedStylist} onNext={() => setStep(3)} onBack={() => setStep(1)} />
           </div>
         )}
 
@@ -968,7 +975,7 @@ export default function BookingForm({ preSelectedService, preSelectedStylist }: 
                 })}
               </div>
             </div>
-            <NavButtons nextDisabled={!selectedDate || !selectedTime} onNext={() => setStep(4)} onBack={() => setStep(2)} />
+            <NavButtons step={step} nextDisabled={!selectedDate || !selectedTime} onNext={() => setStep(4)} onBack={() => setStep(2)} />
           </div>
         )}
 
@@ -1064,8 +1071,8 @@ export default function BookingForm({ preSelectedService, preSelectedStylist }: 
             {/* Form fields */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16, marginBottom: 16 }}>
               {[
-                { label: "Full Name",     key: "name",  type: "text",  placeholder: "Fatima Khan",      inputMode: undefined as any },
-                { label: "Email Address", key: "email", type: "email", placeholder: "you@email.com",     inputMode: undefined as any },
+                { label: "Full Name",     key: "name",  type: "text",  placeholder: "Fatima Khan",      inputMode: undefined as React.HTMLAttributes<HTMLInputElement>["inputMode"] },
+                { label: "Email Address", key: "email", type: "email", placeholder: "you@email.com",     inputMode: undefined as React.HTMLAttributes<HTMLInputElement>["inputMode"] },
                 { label: "Phone Number",  key: "phone", type: "tel",   placeholder: "0300-1234567",      inputMode: "numeric" as const },
               ].map(({ label, key, type, placeholder, inputMode }) => (
                 <div key={key}>

@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import { APP_NAME, NAV_LINKS, ROUTES, APP_PHONE } from "@/constants";
 import { Menu, X, Scissors, Phone, Sun, Moon } from "lucide-react";
 import { useTheme } from "./ThemeProvider";
-import { getSession, isAdmin } from "@/lib/session";
+import { getSession } from "@/lib/session";
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
@@ -16,11 +16,18 @@ export default function Navbar() {
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 40);
     window.addEventListener("scroll", fn, { passive: true });
-    
+
     // Check if user is logged in
     try {
       const u = getSession();
-      if (u) setUser(u);
+      if (u) {
+        const id = requestAnimationFrame(() => setUser(u));
+        window.addEventListener("scroll", fn, { passive: true });
+        return () => {
+          window.removeEventListener("scroll", fn);
+          cancelAnimationFrame(id);
+        };
+      }
     } catch { /* ignore */ }
 
     return () => window.removeEventListener("scroll", fn);

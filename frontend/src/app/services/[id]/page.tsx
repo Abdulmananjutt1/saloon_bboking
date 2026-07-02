@@ -8,7 +8,7 @@ import { SERVICES, STYLISTS } from "@/lib/data/salon";
 import { formatPrice, formatDuration } from "@/lib/utils";
 import { ROUTES, APP_PHONE } from "@/constants";
 import StarRating from "@/components/ui/StarRating";
-import { Clock, ChevronRight, Scissors, CheckCircle, Users, Sparkles, Award, Star, Calendar, ArrowRight } from "lucide-react";
+import { Clock, ChevronRight, Scissors, Users, Sparkles, Star, Calendar, ArrowRight } from "lucide-react";
 
 interface Props { params: Promise<{ id: string }> }
 

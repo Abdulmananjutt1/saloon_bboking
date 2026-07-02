@@ -10,7 +10,7 @@ import { formatPrice, formatDuration } from "@/lib/utils";
 import {
   Scissors, Clock, Phone, MapPin, ChevronRight,
   Sparkles, Crown, Zap, Calendar,
-  Award, ArrowRight, Quote, Star
+  Award, ArrowRight, Quote
 } from "lucide-react";
 
 export default function HomePage() {
@@ -34,19 +34,6 @@ export default function HomePage() {
     "https://images.unsplash.com/photo-1487412912498-0447578fcca8?w=600&q=80",
   ];
 
-  const stats = [
-    { value: "25+", label: "Years of Excellence", icon: Award },
-    { value: "8,500+", label: "Happy Clients", icon: Crown },
-    { value: "50+", label: "Premium Services", icon: Sparkles },
-    { value: "4.9★", label: "Average Rating", icon: Star },
-  ];
-
-  const processSteps = [
-    { num: "01", title: "Choose Service", desc: "Browse our 50+ luxury treatments and pick the one you love." },
-    { num: "02", title: "Pick a Stylist", desc: "Select from our team of certified master stylists." },
-    { num: "03", title: "Book a Slot", desc: "Pick your preferred date and time — confirmed in seconds." },
-    { num: "04", title: "Enjoy & Glow", desc: "Sit back and let our experts work their magic on you." },
-  ];
 
   return (
     <>

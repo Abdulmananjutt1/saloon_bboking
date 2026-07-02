@@ -18,6 +18,13 @@ interface BookingPreview {
   date: string;
 }
 
+interface StatsResponse {
+  success: boolean;
+  data: {
+    recentBookings: BookingPreview[];
+  };
+}
+
 export function useNotifications() {
   const [notifs, setNotifs]   = useState<NotificationItem[]>([]);
   const [unread, setUnread]   = useState(0);
@@ -26,7 +33,7 @@ export function useNotifications() {
   useEffect(() => {
     // 1. Seed with recent bookings from stats endpoint
     statsApi.getStats()
-      .then((json: any) => {
+      .then((json: StatsResponse) => {
         if (json.success && json.data?.recentBookings) {
           const initial: NotificationItem[] = json.data.recentBookings
             .slice(0, 3)

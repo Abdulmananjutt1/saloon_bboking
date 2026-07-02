@@ -54,7 +54,7 @@ function LoginPageInner() {
     setLoading(true);
 
     try {
-      const data = await authApi.login(form) as any;
+      const data = await authApi.login(form) as { success: boolean; data: { name: string; role: string }; token?: string; error?: string; errors?: Record<string, string> };
 
       if (data.errors?.general) { setApiError(data.errors.general); return; }
       if (data.errors)           { setErrors(data.errors); return; }

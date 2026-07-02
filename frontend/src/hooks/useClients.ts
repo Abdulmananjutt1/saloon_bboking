@@ -16,6 +16,13 @@ export interface Client {
   createdAt: string;
 }
 
+interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  errors?: ValidationError;
+  error?: string;
+}
+
 const EMPTY_FORM = { name: "", email: "", phone: "", notes: "" };
 
 export function useClients() {
@@ -34,20 +41,20 @@ export function useClients() {
   const fetchClients = async (q = "") => {
     setLoading(true);
     try {
-      const data = await clientsApi.getAll(q || undefined) as any;
+      const data = await clientsApi.getAll(q || undefined) as ApiResponse<Client[]>;
       if (data.success) setClients(data.data);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { fetchClients(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { fetchClients(); }, []);  
 
   // Debounced search
   useEffect(() => {
     const t = setTimeout(() => fetchClients(search), 300);
     return () => clearTimeout(t);
-  }, [search]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [search]);  
 
   const setField = (key: keyof typeof form, value: string) => {
     setFormState((prev) => ({ ...prev, [key]: value }));
@@ -71,7 +78,7 @@ export function useClients() {
     setErrors({});
     setSaving(true);
     try {
-      const data = await clientsApi.create(form) as any;
+      const data = await clientsApi.create(form) as ApiResponse<Client>;
       if (data.errors) {
         setErrors(data.errors);
         return;

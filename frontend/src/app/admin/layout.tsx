@@ -8,7 +8,6 @@ import {
   Scissors, LayoutDashboard, CalendarDays,
   Users, UserCheck, BarChart3, LogOut, Settings, MessageSquare, Bell, ChevronUp
 } from "lucide-react";
-import NotificationsDropdown from "@/components/NotificationsDropdown";
 import { useAdminUnread } from "@/hooks/useAdminUnread";
 import { ToastContainer, useToast } from "@/components/ui/Toast";
 import { clearSession, pushSessionToast, popSessionToast } from "@/lib/session";

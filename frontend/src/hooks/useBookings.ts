@@ -21,6 +21,12 @@ export interface AdminBooking {
   createdAt: string;
 }
 
+interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  error?: string;
+}
+
 export function useBookings(statusFilter = "all") {
   const [bookings, setBookings] = useState<AdminBooking[]>([]);
   const [allBookings, setAll]   = useState<AdminBooking[]>([]);
@@ -30,7 +36,7 @@ export function useBookings(statusFilter = "all") {
   const fetchBookings = async (status = "all") => {
     setLoading(true);
     try {
-      const data = await bookingsApi.getAll(status) as any;
+      const data = await bookingsApi.getAll(status) as ApiResponse<AdminBooking[]>;
       if (data.success) setBookings(data.data);
     } finally {
       setLoading(false);
@@ -40,19 +46,19 @@ export function useBookings(statusFilter = "all") {
   // Always keep an unfiltered count for status tabs
   const fetchAll = async () => {
     try {
-      const data = await bookingsApi.getAll() as any;
+      const data = await bookingsApi.getAll() as ApiResponse<AdminBooking[]>;
       if (data.success) setAll(data.data);
     } catch { /* silent */ }
   };
 
   useEffect(() => { fetchBookings(statusFilter); }, [statusFilter]);
   // Refresh all-count whenever filtered list changes
-  useEffect(() => { fetchAll(); }, [bookings]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { fetchAll(); }, [bookings]);  
 
   const updateStatus = async (id: string, newStatus: string) => {
     setUpdating(id);
     try {
-      const data = await bookingsApi.updateStatus(id, newStatus) as any;
+      const data = await bookingsApi.updateStatus(id, newStatus) as ApiResponse<AdminBooking>;
       if (data.success) {
         setBookings((prev) =>
           prev.map((b) => b.id === id ? { ...b, status: newStatus as BookingStatus } : b)
