@@ -30,9 +30,16 @@ export function validateEmail(v: string): string | null {
 
 export function validatePhone(v: string): string | null {
   if (!v.trim()) return "Phone number is required";
-  const cleaned = v.replace(/[\s\-().]/g, "");
-  if (!REGEX.phone.test(v.trim()) && !(cleaned.length >= 10 && cleaned.length <= 13)) {
-    return "Enter a valid Pakistani phone number (e.g. 0300-1234567)";
+  // Strip all formatting characters
+  const cleaned = v.trim().replace(/[\s\-().+]/g, "");
+  // Accept Pakistani numbers: 03XXXXXXXXX (11 digits), 3XXXXXXXXX (10 digits),
+  // or with country code 923XXXXXXXXX / 00923XXXXXXXXX
+  if (cleaned.length < 10 || cleaned.length > 13) {
+    return "Enter a valid phone number (e.g. 0300-1234567)";
+  }
+  // Must contain only digits after stripping
+  if (!/^\d+$/.test(cleaned)) {
+    return "Phone number can only contain digits, spaces, and dashes";
   }
   return null;
 }

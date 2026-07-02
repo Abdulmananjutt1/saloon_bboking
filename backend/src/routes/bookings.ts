@@ -2,6 +2,7 @@ import { Router, Request, Response } from "express";
 import prisma from "../db";
 import { validateBooking, hasErrors } from "../validations";
 import { BookingStatus } from "@prisma/client";
+import { notifyAdmins, notifyClient } from "../lib/push";
 
 const router = Router();
 
@@ -208,6 +209,16 @@ router.post("/", async (req: Request, res: Response) => {
     });
 
     res.status(201).json({ success: true, data: formatBooking(booking) });
+
+    // ── Push notification to admin ──────────────────────────
+    notifyAdmins({
+      title: "📅 New Booking!",
+      body:  `${body.name.trim()} booked ${serviceName} on ${body.date} at ${body.time}`,
+      tag:   `booking-${booking.id}`,
+      url:   "/admin/bookings",
+      data:  { bookingId: booking.id },
+    }).catch(() => {});
+
   } catch (err) {
     console.error("[POST /bookings]", err);
     res.status(500).json({ success: false, error: "Failed to create booking" });
@@ -232,6 +243,24 @@ router.patch("/:id", async (req: Request, res: Response) => {
     });
 
     res.json({ success: true, data: formatBooking(updated) });
+
+    // ── Push notification to client on status change ────────
+    const statusMessages: Record<string, string> = {
+      confirmed:  "✅ Your booking has been confirmed!",
+      completed:  "🎉 Your visit is complete. Thank you!",
+      cancelled:  "❌ Your booking has been cancelled.",
+      pending:    "⏳ Your booking is pending confirmation.",
+    };
+    const msg = statusMessages[status];
+    if (msg && booking.customerEmail) {
+      notifyClient(booking.customerEmail, {
+        title: "Glamour Studio — Booking Update",
+        body:  `${msg} (${updated.id})`,
+        tag:   `booking-status-${updated.id}`,
+        url:   "/dashboard",
+        data:  { bookingId: updated.id, status },
+      }).catch(() => {});
+    }
   } catch (err) {
     console.error("[PATCH /bookings/:id]", err);
     res.status(500).json({ success: false, error: "Failed to update booking" });

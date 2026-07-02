@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-
-const JWT_SECRET = process.env.JWT_SECRET || "glamour_studio_super_secret_dev_key_2026";
+import { JWT_SECRET } from "../lib/config";
 
 export interface AuthRequest extends Request {
   user?: {

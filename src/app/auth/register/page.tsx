@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import { APP_NAME, ROUTES } from "@/constants";
 import { validateRegisterForm, hasErrors, type ValidationError } from "@/lib/validations";
+import { authApi } from "@/lib/api";
+import { saveSession } from "@/lib/session";
 
 const PERKS = [
   "Instant booking confirmation — no waiting",
@@ -61,24 +63,13 @@ function RegisterPageInner() {
     setLoading(true);
 
     try {
-      const res  = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-      const data = await res.json();
+      const data = await authApi.register(form) as any;
 
-      if (!res.ok) {
-        if (data.errors) setErrors(data.errors);
-        else setApiError(data.error ?? "Registration failed. Please try again.");
-        return;
-      }
+      if (data.errors) { setErrors(data.errors); return; }
+      if (!data.success) { setApiError(data.error ?? "Registration failed. Please try again."); return; }
 
-      localStorage.setItem("user", JSON.stringify(data.data));
-      if (data.token) {
-        localStorage.setItem("token", data.token);
-      }
-      // Redirect back to where user came from, or to dashboard
+      saveSession(data.data, data.token ?? "");
+
       if (redirectTo) {
         window.location.href = decodeURIComponent(redirectTo);
       } else {

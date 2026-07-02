@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { API_ENDPOINTS } from "@/constants";
+import { clientsApi } from "@/lib/api";
 import { validateClientForm, hasErrors, type ValidationError } from "@/lib/validations";
 
 export interface Client {
@@ -19,9 +19,9 @@ export interface Client {
 const EMPTY_FORM = { name: "", email: "", phone: "", notes: "" };
 
 export function useClients() {
-  const [clients, setClients]   = useState<Client[]>([]);
-  const [loading, setLoading]   = useState(true);
-  const [search, setSearch]     = useState("");
+  const [clients, setClients] = useState<Client[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch]   = useState("");
 
   // Modal state
   const [showModal, setShowModal] = useState(false);
@@ -31,27 +31,23 @@ export function useClients() {
   const [apiError, setApiError]   = useState("");
   const [form, setFormState]      = useState(EMPTY_FORM);
 
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-
   const fetchClients = async (q = "") => {
     setLoading(true);
     try {
-      const url  = `${baseUrl}${API_ENDPOINTS.CLIENTS}${q ? `?search=${encodeURIComponent(q)}` : ""}`;
-      const res  = await fetch(url);
-      const data = await res.json();
+      const data = await clientsApi.getAll(q || undefined) as any;
       if (data.success) setClients(data.data);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { fetchClients(); }, []);  // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { fetchClients(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Debounced search
   useEffect(() => {
     const t = setTimeout(() => fetchClients(search), 300);
     return () => clearTimeout(t);
-  }, [search]);  // eslint-disable-line react-hooks/exhaustive-deps
+  }, [search]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const setField = (key: keyof typeof form, value: string) => {
     setFormState((prev) => ({ ...prev, [key]: value }));
@@ -75,15 +71,13 @@ export function useClients() {
     setErrors({});
     setSaving(true);
     try {
-      const res  = await fetch(`${baseUrl}${API_ENDPOINTS.CLIENTS}`, {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify(form),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        if (data.errors) setErrors(data.errors);
-        else setApiError(data.error ?? "Failed to create client.");
+      const data = await clientsApi.create(form) as any;
+      if (data.errors) {
+        setErrors(data.errors);
+        return;
+      }
+      if (data.error) {
+        setApiError(data.error);
         return;
       }
       setSaved(true);
@@ -97,11 +91,8 @@ export function useClients() {
   };
 
   return {
-    // Data
     clients, loading, search, setSearch,
-    // Modal
     showModal, openModal, closeModal,
-    // Form
     form, setField, errors, apiError, saving, saved,
     createClient,
   };

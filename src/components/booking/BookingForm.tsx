@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { validateBookingForm, hasErrors, type ValidationError } from "@/lib/validations";
 import { ToastContainer, useToast } from "@/components/ui/Toast";
+import { servicesApi, stylistsApi, bookingsApi } from "@/lib/api";
 
 interface Props {
   preSelectedService?: string;
@@ -89,10 +90,9 @@ export default function BookingForm({ preSelectedService, preSelectedStylist }: 
     }
     setCheckingAuth(false);
 
-    const API = process.env.NEXT_PUBLIC_API_URL;
     Promise.all([
-      fetch(`${API}/services`).then((r) => r.json()),
-      fetch(`${API}/stylists`).then((r) => r.json()),
+      servicesApi.getAll() as Promise<any>,
+      stylistsApi.getAll() as Promise<any>,
     ]).then(([svcRes, styRes]) => {
       if (svcRes.success) setServices(svcRes.data);
       if (styRes.success) setStylists(styRes.data);
@@ -187,6 +187,13 @@ export default function BookingForm({ preSelectedService, preSelectedStylist }: 
 
     if (hasErrors(validationErrors)) {
       setErrors(validationErrors);
+      // Scroll to first error field so user can see what's wrong
+      const firstErrorKey = Object.keys(validationErrors)[0];
+      setTimeout(() => {
+        const el = document.querySelector(`[data-field="${firstErrorKey}"]`) as HTMLElement;
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 50);
+      toast("error", "Please fix the errors", Object.values(validationErrors)[0] as string);
       return;
     }
 
@@ -220,15 +227,9 @@ export default function BookingForm({ preSelectedService, preSelectedStylist }: 
             notes: form.notes,
           };
 
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/bookings`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const data = await bookingsApi.create(payload) as any;
 
-      const data = await res.json();
-
-      if (!res.ok) {
+      if (!data.success) {
         if (data.errors) {
           setErrors(data.errors);
           if (data.errors.time) {
@@ -1075,6 +1076,7 @@ export default function BookingForm({ preSelectedService, preSelectedStylist }: 
                     type={type}
                     placeholder={placeholder}
                     inputMode={inputMode}
+                    data-field={key}
                     value={form[key as keyof typeof form]}
                     onChange={(e) => {
                       let val = e.target.value;
@@ -1132,7 +1134,52 @@ export default function BookingForm({ preSelectedService, preSelectedStylist }: 
               </div>
             )}
 
-            <NavButtons nextDisabled={loading} onBack={() => setStep(3)} submitMode />
+            {/* ── Confirm Booking buttons (inline to avoid React re-mount bug) ── */}
+            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 28 }}>
+              <button
+                type="button"
+                onClick={() => setStep(3)}
+                style={{
+                  display: "flex", alignItems: "center", gap: 6,
+                  padding: "11px 22px", borderRadius: 11,
+                  background: "var(--bg-secondary)", border: "1px solid var(--border-light)",
+                  color: "var(--text-secondary)", fontSize: "0.82rem", fontWeight: 600, cursor: "pointer"
+                }}
+              >
+                <ChevronLeft style={{ width: 15, height: 15 }} /> Back
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                style={{
+                  display: "flex", alignItems: "center", gap: 7,
+                  padding: "12px 28px", borderRadius: 11,
+                  background: loading ? "var(--bg-secondary)" : "var(--grad-gold-btn)",
+                  border: loading ? "1px solid var(--border-light)" : "none",
+                  color: loading ? "var(--text-muted)" : "#0d0c0a",
+                  fontSize: "0.82rem", fontWeight: 700,
+                  cursor: loading ? "not-allowed" : "pointer",
+                  boxShadow: loading ? "none" : "0 4px 20px rgba(201,151,59,0.3)",
+                  transition: "all 0.2s", opacity: loading ? 0.5 : 1
+                }}
+              >
+                {loading ? (
+                  <>
+                    <span style={{
+                      width: 14, height: 14, borderRadius: "50%",
+                      border: "2px solid rgba(13,12,10,0.3)", borderTopColor: "#0d0c0a",
+                      animation: "spin 0.7s linear infinite", display: "inline-block"
+                    }} />
+                    Confirming…
+                  </>
+                ) : (
+                  <>
+                    <Scissors style={{ width: 14, height: 14, transform: "rotate(45deg)" }} />
+                    Confirm Booking
+                  </>
+                )}
+              </button>
+            </div>
           </form>
         )}
       </div>

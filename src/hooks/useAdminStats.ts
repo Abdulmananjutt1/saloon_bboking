@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { API_ENDPOINTS } from "@/constants";
+import { statsApi } from "@/lib/api";
 
 export interface AdminStatsData {
   totalRevenue: number;
@@ -38,8 +38,7 @@ export function useAdminStats() {
     if (isRefresh) setRefreshing(true);
     else setLoading(true);
     try {
-      const res  = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${API_ENDPOINTS.STATS}`);
-      const data = await res.json();
+      const data = await statsApi.getStats() as any;
       if (data.success) setStats(data.data);
     } catch {
       // silently fail — stale data stays

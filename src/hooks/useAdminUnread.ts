@@ -1,17 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { chatApi } from "@/lib/api";
+import { buildWsUrl } from "@/lib/ws";
 
 // localStorage key prefix — per-room last-read timestamps
 const LAST_READ_PREFIX = "gs_admin_read_";
-
-function buildWsUrl(): string {
-  const api = process.env.NEXT_PUBLIC_API_URL ?? "";
-  return api
-    .replace("http://", "ws://")
-    .replace("https://", "wss://")
-    .replace("/api", "") + "/ws";
-}
 
 interface UnreadMap {
   [roomId: string]: number; // count of unread client messages per room
@@ -36,15 +30,13 @@ export function useAdminUnread() {
   // ── Compute unread from rooms API ─────────────────────────────────────────
   const computeFromRooms = useCallback(async () => {
     try {
-      const res  = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/chat/rooms`);
-      const json = await res.json();
+      const json = await chatApi.getRooms() as any;
       if (!json.success) return;
 
       const map: UnreadMap = {};
       for (const room of json.data as { roomId: string; messageCount: number; lastSender: string }[]) {
         const key      = `${LAST_READ_PREFIX}${room.roomId}`;
         const lastRead = parseInt(localStorage.getItem(key) ?? "0", 10);
-        // Only count rooms where the last sender was a client (not admin)
         const unread   = Math.max(0, room.messageCount - lastRead);
         if (unread > 0 && room.lastSender !== "admin") {
           map[room.roomId] = unread;
@@ -101,11 +93,8 @@ export function useAdminUnread() {
     localStorage.setItem(`${LAST_READ_PREFIX}${roomId}_open`, "1");
 
     // 3. Background: persist last-read count so it survives page refresh
-    fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/chat/messages?roomId=${encodeURIComponent(roomId)}`
-    )
-      .then((r) => r.json())
-      .then((json) => {
+    chatApi.getMessages(roomId)
+      .then((json: any) => {
         if (json.success) {
           const count = (json.data as unknown[]).length;
           localStorage.setItem(`${LAST_READ_PREFIX}${roomId}`, String(count));

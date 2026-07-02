@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { API_ENDPOINTS, type BookingStatus } from "@/constants";
+import { bookingsApi } from "@/lib/api";
+import { type BookingStatus } from "@/constants";
 
 export interface AdminBooking {
   id: string;
@@ -21,21 +22,15 @@ export interface AdminBooking {
 }
 
 export function useBookings(statusFilter = "all") {
-  const [bookings, setBookings]   = useState<AdminBooking[]>([]);
-  const [allBookings, setAll]     = useState<AdminBooking[]>([]);
-  const [loading, setLoading]     = useState(true);
-  const [updating, setUpdating]   = useState<string | null>(null);
-
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+  const [bookings, setBookings] = useState<AdminBooking[]>([]);
+  const [allBookings, setAll]   = useState<AdminBooking[]>([]);
+  const [loading, setLoading]   = useState(true);
+  const [updating, setUpdating] = useState<string | null>(null);
 
   const fetchBookings = async (status = "all") => {
     setLoading(true);
     try {
-      const url  = status === "all"
-        ? `${baseUrl}${API_ENDPOINTS.BOOKINGS}`
-        : `${baseUrl}${API_ENDPOINTS.BOOKINGS}?status=${status}`;
-      const res  = await fetch(url);
-      const data = await res.json();
+      const data = await bookingsApi.getAll(status) as any;
       if (data.success) setBookings(data.data);
     } finally {
       setLoading(false);
@@ -45,25 +40,19 @@ export function useBookings(statusFilter = "all") {
   // Always keep an unfiltered count for status tabs
   const fetchAll = async () => {
     try {
-      const res  = await fetch(`${baseUrl}${API_ENDPOINTS.BOOKINGS}`);
-      const data = await res.json();
+      const data = await bookingsApi.getAll() as any;
       if (data.success) setAll(data.data);
     } catch { /* silent */ }
   };
 
   useEffect(() => { fetchBookings(statusFilter); }, [statusFilter]);
   // Refresh all-count whenever filtered list changes
-  useEffect(() => { fetchAll(); }, [bookings]);  // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { fetchAll(); }, [bookings]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const updateStatus = async (id: string, newStatus: string) => {
     setUpdating(id);
     try {
-      const res  = await fetch(`${baseUrl}${API_ENDPOINTS.BOOKING(id)}`, {
-        method:  "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ status: newStatus }),
-      });
-      const data = await res.json();
+      const data = await bookingsApi.updateStatus(id, newStatus) as any;
       if (data.success) {
         setBookings((prev) =>
           prev.map((b) => b.id === id ? { ...b, status: newStatus as BookingStatus } : b)

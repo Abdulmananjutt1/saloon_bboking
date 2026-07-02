@@ -6,7 +6,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { SERVICES, STYLISTS } from "@/lib/data/salon";
 import { formatPrice, formatDuration } from "@/lib/utils";
-import { ROUTES } from "@/constants";
+import { ROUTES, APP_PHONE } from "@/constants";
 import StarRating from "@/components/ui/StarRating";
 import { Clock, ChevronRight, Scissors, CheckCircle, Users, Sparkles, Award, Star, Calendar, ArrowRight } from "lucide-react";
 
@@ -475,8 +475,7 @@ export default async function ServiceDetailPage({ params }: Props) {
                 <Calendar style={{ width: 18, height: 18 }} />
                 Book Now — Free Cancellation
               </Link>
-              <Link 
-                href={`tel:${process.env.NEXT_PUBLIC_PHONE || '+923001234567'}`}
+              <Link href={`tel:${APP_PHONE}`}
                 className="sal-btn sal-btn-outline"
                 style={{ padding: "15px 36px", fontSize: "0.95rem", fontWeight: 700 }}
               >

@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { APP_NAME, NAV_LINKS, ROUTES, APP_PHONE } from "@/constants";
 import { Menu, X, Scissors, Phone, Sun, Moon } from "lucide-react";
 import { useTheme } from "./ThemeProvider";
+import { getSession, isAdmin } from "@/lib/session";
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
@@ -18,13 +19,9 @@ export default function Navbar() {
     
     // Check if user is logged in
     try {
-      const stored = localStorage.getItem("user");
-      if (stored) {
-        setUser(JSON.parse(stored));
-      }
-    } catch (e) {
-      console.error(e);
-    }
+      const u = getSession();
+      if (u) setUser(u);
+    } catch { /* ignore */ }
 
     return () => window.removeEventListener("scroll", fn);
   }, []);

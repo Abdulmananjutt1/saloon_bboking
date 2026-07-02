@@ -1,7 +1,10 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { ROUTES, API_ENDPOINTS, type BookingStatus } from "@/constants";
+import { ROUTES, type BookingStatus } from "@/constants";
+import { bookingsApi, chatApi } from "@/lib/api";
+import { buildWsUrl } from "@/lib/ws";
+import { getSession, clearSession, pushSessionToast } from "@/lib/session";
 
 export interface ClientBooking {
   id: string;
@@ -31,14 +34,6 @@ export interface ChatMessage {
 
 type WsStatus = "connecting" | "connected" | "disconnected";
 
-function buildWsUrl(): string {
-  const api = process.env.NEXT_PUBLIC_API_URL ?? "";
-  return api
-    .replace("http://", "ws://")
-    .replace("https://", "wss://")
-    .replace("/api", "") + "/ws";
-}
-
 // LocalStorage key for persisting last-read message count per client
 const LAST_READ_KEY = "gs_chat_last_read";
 
@@ -57,19 +52,18 @@ export function useClientDashboard() {
   const [unreadCount, setUnreadCount] = useState(0);
   const chatOpenRef = useRef(false);
 
-  const ws           = useRef<WebSocket | null>(null);
-  const chatEndRef   = useRef<HTMLDivElement | null>(null);
+  const ws         = useRef<WebSocket | null>(null);
+  const chatEndRef = useRef<HTMLDivElement | null>(null);
 
   // ── Bootstrap: read user from localStorage, redirect if not logged in ────────
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const stored = localStorage.getItem("user");
-    if (!stored) {
+    const parsed = getSession();
+    if (!parsed) {
       window.location.href = ROUTES.LOGIN;
       return;
     }
-    const parsed = JSON.parse(stored);
     setUser(parsed);
     fetchBookings(parsed.email);
     fetchChatHistory(parsed.email);
@@ -116,7 +110,7 @@ export function useClientDashboard() {
   // ── Compute unread from loaded history ──────────────────────────────────────
   useEffect(() => {
     if (!user || chatMessages.length === 0) return;
-    const key = `${LAST_READ_KEY}_${user.email}`;
+    const key      = `${LAST_READ_KEY}_${user.email}`;
     const lastRead = parseInt(localStorage.getItem(key) ?? "0", 10);
     const adminMsgs = chatMessages.filter(
       (m) => m.sender === "admin" && new Date(m.createdAt).getTime() > lastRead
@@ -143,17 +137,15 @@ export function useClientDashboard() {
   // ── Data fetchers ────────────────────────────────────────────────────────────
   const fetchBookings = async (email: string) => {
     try {
-      const res  = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${API_ENDPOINTS.BOOKINGS}?email=${email}`);
-      const data = await res.json();
-      if (res.ok && data.success) setBookings(data.data);
+      const data = await bookingsApi.getAll(undefined, email) as any;
+      if (data.success) setBookings(data.data);
     } catch { /* ignore */ }
     finally { setLoading(false); }
   };
 
   const fetchChatHistory = async (email: string) => {
     try {
-      const res  = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/chat/messages?roomId=${encodeURIComponent(email)}`);
-      const data = await res.json();
+      const data = await chatApi.getMessages(email) as any;
       if (data.success) setChatMessages(data.data);
     } catch { /* ignore */ }
   };
@@ -163,13 +155,8 @@ export function useClientDashboard() {
     if (!confirm("Are you sure you want to cancel this appointment?")) return;
     setCancellingId(id);
     try {
-      const res  = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${API_ENDPOINTS.BOOKING(id)}`, {
-        method:  "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ status: "cancelled" }),
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
+      const data = await bookingsApi.updateStatus(id, "cancelled") as any;
+      if (data.success) {
         setBookings((prev) =>
           prev.map((b) => (b.id === id ? { ...b, status: "cancelled" } : b))
         );
@@ -200,13 +187,8 @@ export function useClientDashboard() {
       ws.current.send(JSON.stringify(payload));
     } else {
       // REST fallback
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}/chat/messages`, {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify(payload),
-      })
-        .then((r) => r.json())
-        .then((json) => {
+      chatApi.sendMessage(payload)
+        .then((json: any) => {
           if (json.success) setChatMessages((prev) => [...prev, json.data]);
         });
     }
@@ -214,9 +196,8 @@ export function useClientDashboard() {
   };
 
   const logout = () => {
-    localStorage.removeItem("user");
-    localStorage.removeItem("token");
-    sessionStorage.setItem("toast", JSON.stringify({ type: "success", title: "Logged Out", message: "You have been logged out successfully." }));
+    clearSession();
+    pushSessionToast("success", "Logged Out", "You have been logged out successfully.");
     window.location.href = ROUTES.LOGIN;
   };
 

@@ -1,34 +1,33 @@
 import { Router, Request, Response } from "express";
-import {
-  getClients, getClientById, getClientByEmail,
-  createClient, updateClient, deleteClient,
-} from "../store";
+import prisma from "../db";
 import { validateClient, validateName, validatePhone, hasErrors } from "../validations";
 
 const router = Router();
 
 // GET /clients
-router.get("/", (req: Request, res: Response) => {
+router.get("/", async (req: Request, res: Response) => {
   try {
     const { search, sortBy } = req.query as Record<string, string>;
-    let clients = getClients();
 
-    if (search) {
-      const q = search.toLowerCase();
-      clients = clients.filter(
-        (c) =>
-          c.name.toLowerCase().includes(q) ||
-          c.email.toLowerCase().includes(q) ||
-          c.phone.includes(q)
-      );
-    }
+    // Build where clause for search
+    const where = search
+      ? {
+          OR: [
+            { name:  { contains: search, mode: "insensitive" as const } },
+            { email: { contains: search, mode: "insensitive" as const } },
+            { phone: { contains: search } },
+          ],
+        }
+      : {};
 
-    clients = clients.sort((a, b) => {
-      if (sortBy === "totalSpent")  return b.totalSpent  - a.totalSpent;
-      if (sortBy === "totalVisits") return b.totalVisits - a.totalVisits;
-      if (sortBy === "name")        return a.name.localeCompare(b.name);
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    });
+    // Build orderBy clause
+    const orderBy: Record<string, string> =
+      sortBy === "totalSpent"  ? { totalSpent:  "desc" } :
+      sortBy === "totalVisits" ? { totalVisits: "desc" } :
+      sortBy === "name"        ? { name:        "asc"  } :
+                                 { createdAt:   "desc" };
+
+    const clients = await prisma.client.findMany({ where, orderBy });
 
     res.json({ success: true, data: clients, total: clients.length });
   } catch (err) {
@@ -38,9 +37,9 @@ router.get("/", (req: Request, res: Response) => {
 });
 
 // GET /clients/:id
-router.get("/:id", (req: Request, res: Response) => {
+router.get("/:id", async (req: Request, res: Response) => {
   try {
-    const client = getClientById(req.params.id);
+    const client = await prisma.client.findUnique({ where: { id: req.params.id } });
     if (!client) return res.status(404).json({ success: false, error: "Client not found" });
     res.json({ success: true, data: client });
   } catch (err) {
@@ -49,13 +48,15 @@ router.get("/:id", (req: Request, res: Response) => {
 });
 
 // POST /clients
-router.post("/", (req: Request, res: Response) => {
+router.post("/", async (req: Request, res: Response) => {
   try {
-    const body = req.body as Record<string, string>;
+    const body   = req.body as Record<string, string>;
     const errors = validateClient(body);
     if (hasErrors(errors)) return res.status(422).json({ success: false, errors });
 
-    const existing = getClientByEmail(body.email);
+    const existing = await prisma.client.findUnique({
+      where: { email: body.email.trim().toLowerCase() },
+    });
     if (existing) {
       return res.status(409).json({
         success: false,
@@ -63,11 +64,13 @@ router.post("/", (req: Request, res: Response) => {
       });
     }
 
-    const client = createClient({
-      name:  body.name.trim(),
-      email: body.email.trim().toLowerCase(),
-      phone: body.phone.trim(),
-      notes: body.notes?.trim() || undefined,
+    const client = await prisma.client.create({
+      data: {
+        name:  body.name.trim(),
+        email: body.email.trim().toLowerCase(),
+        phone: body.phone.trim(),
+        notes: body.notes?.trim() || null,
+      },
     });
 
     res.status(201).json({ success: true, data: client });
@@ -78,7 +81,7 @@ router.post("/", (req: Request, res: Response) => {
 });
 
 // PATCH /clients/:id
-router.patch("/:id", (req: Request, res: Response) => {
+router.patch("/:id", async (req: Request, res: Response) => {
   try {
     const body   = req.body as Record<string, string>;
     const errors: Record<string, string> = {};
@@ -87,13 +90,18 @@ router.patch("/:id", (req: Request, res: Response) => {
     if (body.phone !== undefined) { const e = validatePhone(body.phone); if (e) errors.phone = e; }
     if (hasErrors(errors)) return res.status(422).json({ success: false, errors });
 
-    const updated = updateClient(req.params.id, {
-      name:  body.name?.trim(),
-      phone: body.phone?.trim(),
-      notes: body.notes?.trim(),
+    const existing = await prisma.client.findUnique({ where: { id: req.params.id } });
+    if (!existing) return res.status(404).json({ success: false, error: "Client not found" });
+
+    const updated = await prisma.client.update({
+      where: { id: req.params.id },
+      data: {
+        ...(body.name  !== undefined && { name:  body.name.trim()  }),
+        ...(body.phone !== undefined && { phone: body.phone.trim() }),
+        ...(body.notes !== undefined && { notes: body.notes.trim() || null }),
+      },
     });
 
-    if (!updated) return res.status(404).json({ success: false, error: "Client not found" });
     res.json({ success: true, data: updated });
   } catch (err) {
     res.status(500).json({ success: false, error: "Failed to update client" });
@@ -101,10 +109,12 @@ router.patch("/:id", (req: Request, res: Response) => {
 });
 
 // DELETE /clients/:id
-router.delete("/:id", (req: Request, res: Response) => {
+router.delete("/:id", async (req: Request, res: Response) => {
   try {
-    const deleted = deleteClient(req.params.id);
-    if (!deleted) return res.status(404).json({ success: false, error: "Client not found" });
+    const existing = await prisma.client.findUnique({ where: { id: req.params.id } });
+    if (!existing) return res.status(404).json({ success: false, error: "Client not found" });
+
+    await prisma.client.delete({ where: { id: req.params.id } });
     res.json({ success: true, message: "Client deleted" });
   } catch (err) {
     res.status(500).json({ success: false, error: "Failed to delete client" });

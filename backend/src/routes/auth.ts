@@ -2,20 +2,8 @@ import { Router, Request, Response } from "express";
 import prisma from "../db";
 import jwt from "jsonwebtoken";
 import { validateLogin, validateRegister, hasErrors } from "../validations";
-const JWT_SECRET = process.env.JWT_SECRET || "glamour_studio_super_secret_dev_key_2026";
-
-// Simple deterministic hash — no external crypto deps
-function hashPassword(password: string): string {
-  const salt = "glamour_studio_2026";
-  const str  = password + salt;
-  let hash   = 0;
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = (hash << 5) - hash + char;
-    hash |= 0;
-  }
-  return `sha_${Math.abs(hash).toString(36)}_${Buffer.from(str.slice(0, 8)).toString("base64")}`;
-}
+import { hashPassword } from "../lib/hash";
+import { JWT_SECRET } from "../lib/config";
 
 const router = Router();
 

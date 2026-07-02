@@ -8,6 +8,8 @@ import { Scissors, Mail, Lock, Eye, EyeOff, Sparkles, AlertCircle } from "lucide
 import { APP_NAME, ROUTES } from "@/constants";
 import { validateLoginForm, hasErrors, type ValidationError } from "@/lib/validations";
 import { ToastContainer, useToast } from "@/components/ui/Toast";
+import { authApi } from "@/lib/api";
+import { saveSession, pushSessionToast, isAdmin } from "@/lib/session";
 
 function LoginPageInner() {
   const searchParams = useSearchParams();
@@ -52,39 +54,19 @@ function LoginPageInner() {
     setLoading(true);
 
     try {
-      const res  = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-      const data = await res.json();
+      const data = await authApi.login(form) as any;
 
-      if (!res.ok) {
-        if (data.errors?.general) setApiError(data.errors.general);
-        else if (data.errors)     setErrors(data.errors);
-        else setApiError(data.error ?? "Login failed. Please try again.");
-        return;
-      }
+      if (data.errors?.general) { setApiError(data.errors.general); return; }
+      if (data.errors)           { setErrors(data.errors); return; }
+      if (!data.success)         { setApiError(data.error ?? "Login failed. Please try again."); return; }
 
-      // Store basic session info
-      localStorage.setItem("user", JSON.stringify(data.data));
-      if (data.token) {
-        localStorage.setItem("token", data.token);
-      }
+      saveSession(data.data, data.token ?? "");
+      pushSessionToast("success", "Login Successful", `Welcome back, ${data.data.name}!`);
 
-      // Set toast flag for the next page
-      sessionStorage.setItem("toast", JSON.stringify({ type: "success", title: "Login Successful", message: `Welcome back, ${data.data.name}!` }));
-
-      // Redirect back to where user came from, or default by role
       if (redirectTo) {
         window.location.href = decodeURIComponent(redirectTo);
       } else {
-        const role = data.data.role;
-        if (role === "ADMIN" || role === "admin") {
-          window.location.href = ROUTES.ADMIN;
-        } else {
-          window.location.href = ROUTES.DASHBOARD;
-        }
+        window.location.href = isAdmin(data.data) ? ROUTES.ADMIN : ROUTES.DASHBOARD;
       }
     } catch {
       setApiError("Network error. Please check your connection.");

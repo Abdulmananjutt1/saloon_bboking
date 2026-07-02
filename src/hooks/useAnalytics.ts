@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { API_ENDPOINTS } from "@/constants";
+import { statsApi } from "@/lib/api";
 
 export interface AnalyticsData {
   kpi: {
@@ -29,8 +29,7 @@ export function useAnalytics() {
   useEffect(() => {
     const load = async () => {
       try {
-        const res  = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${API_ENDPOINTS.STATS_ANALYTICS}`);
-        const json = await res.json();
+        const json = await statsApi.getAnalytics() as any;
         if (json.success) setData(json.data);
         else setError("Failed to load analytics data.");
       } catch {

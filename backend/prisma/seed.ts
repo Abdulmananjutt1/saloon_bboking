@@ -7,23 +7,11 @@ import "dotenv/config";
 import { Pool } from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient, ServiceCategory, Gender, UserRole } from "../node_modules/.prisma/client";
+import { hashPassword } from "../src/lib/hash";
 
 const pool    = new Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
 const prisma  = new PrismaClient({ adapter } as any);
-
-// Simple deterministic hash matching auth.ts
-function hashPassword(password: string): string {
-  const salt = "glamour_studio_2026";
-  const str  = password + salt;
-  let hash   = 0;
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = (hash << 5) - hash + char;
-    hash |= 0;
-  }
-  return `sha_${Math.abs(hash).toString(36)}_${Buffer.from(str.slice(0, 8)).toString("base64")}`;
-}
 
 async function main() {
   console.log("🌱 Seeding database...");

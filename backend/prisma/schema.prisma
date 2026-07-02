@@ -214,6 +214,24 @@ model GalleryImage {
 }
 
 // ─────────────────────────────────────────
+//  Push Subscriptions
+// ─────────────────────────────────────────
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String?  // null for guest/anonymous clients
+  roomId    String?  // for client chat room identification
+  email     String?  // to match clients by email
+  role      String   @default("client") // "admin" | "client"
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("push_subscriptions")
+}
+
+// ─────────────────────────────────────────
 //  Chat
 // ─────────────────────────────────────────
 model ChatMessage {

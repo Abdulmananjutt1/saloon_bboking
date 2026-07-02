@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { API_ENDPOINTS } from "@/constants";
+import { chatApi } from "@/lib/api";
+import { buildWsUrl } from "@/lib/ws";
 
 export interface ChatMessage {
   id: string;
@@ -23,14 +24,6 @@ export interface ChatRoom {
 
 type WsStatus = "connecting" | "connected" | "disconnected";
 
-function buildWsUrl(): string {
-  const api = process.env.NEXT_PUBLIC_API_URL ?? "";
-  return api
-    .replace("http://", "ws://")
-    .replace("https://", "wss://")
-    .replace("/api", "") + "/ws";
-}
-
 export function useAdminChat() {
   const [rooms, setRooms]               = useState<ChatRoom[]>([]);
   const [selectedRoom, setSelectedRoom] = useState<ChatRoom | null>(null);
@@ -41,9 +34,9 @@ export function useAdminChat() {
   const [sending, setSending]           = useState(false);
   const [wsStatus, setWsStatus]         = useState<WsStatus>("disconnected");
 
-  const ws             = useRef<WebSocket | null>(null);
-  const chatEndRef     = useRef<HTMLDivElement | null>(null);
-  const inputRef       = useRef<HTMLInputElement | null>(null);
+  const ws              = useRef<WebSocket | null>(null);
+  const chatEndRef      = useRef<HTMLDivElement | null>(null);
+  const inputRef        = useRef<HTMLInputElement | null>(null);
   const selectedRoomRef = useRef<ChatRoom | null>(null);
 
   // Keep ref in sync so WS handler always sees latest room
@@ -52,8 +45,7 @@ export function useAdminChat() {
   // ── Fetch room list ──────────────────────────────────────────────────────────
   const fetchRooms = useCallback(async () => {
     try {
-      const res  = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${API_ENDPOINTS.CLIENTS.replace("clients", "chat/rooms")}`);
-      const json = await res.json();
+      const json = await chatApi.getRooms() as any;
       if (json.success) setRooms(json.data);
     } catch { /* silent */ }
     finally { setLoadingRooms(false); }
@@ -112,10 +104,8 @@ export function useAdminChat() {
     if (!selectedRoom) return;
     setLoadingMsgs(true);
     setMessages([]);
-    const url = `${process.env.NEXT_PUBLIC_API_URL}/chat/messages?roomId=${encodeURIComponent(selectedRoom.roomId)}`;
-    fetch(url)
-      .then((r) => r.json())
-      .then((json) => { if (json.success) setMessages(json.data); })
+    chatApi.getMessages(selectedRoom.roomId)
+      .then((json: any) => { if (json.success) setMessages(json.data); })
       .catch(() => {})
       .finally(() => setLoadingMsgs(false));
     inputRef.current?.focus();
@@ -146,13 +136,8 @@ export function useAdminChat() {
     } else {
       // REST fallback when WS is not available
       setSending(true);
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}/chat/messages`, {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify(payload),
-      })
-        .then((r) => r.json())
-        .then((json) => {
+      chatApi.sendMessage(payload)
+        .then((json: any) => {
           if (json.success) setMessages((prev) => [...prev, json.data]);
         })
         .finally(() => { setSending(false); setNewMsg(""); });

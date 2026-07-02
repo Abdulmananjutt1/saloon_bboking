@@ -11,8 +11,9 @@ import {
 
 import { ROUTES, APP_NAME } from "@/constants";
 import { useClientDashboard } from "@/hooks/useClientDashboard";
-
 import { ToastContainer, useToast } from "@/components/ui/Toast";
+import { popSessionToast } from "@/lib/session";
+import { PushNotificationToggle } from "@/components/PushNotificationToggle";
 
 export default function ClientDashboard() {
   const [activeTab, setActiveTab] = useState<"overview" | "appointments" | "chat" | "settings">("overview");
@@ -21,14 +22,8 @@ export default function ClientDashboard() {
 
   // Show toast from sessionStorage (e.g. after login)
   useEffect(() => {
-    const raw = sessionStorage.getItem("toast");
-    if (raw) {
-      try {
-        const t = JSON.parse(raw);
-        toast(t.type, t.title, t.message);
-      } catch { /* ignore */ }
-      sessionStorage.removeItem("toast");
-    }
+    const t = popSessionToast();
+    if (t) toast(t.type as "success" | "error" | "info", t.title, t.message);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -211,6 +206,11 @@ export default function ClientDashboard() {
               </div>
             </>
           )}
+
+          {/* Push notification toggle */}
+          <div style={{ padding: "0 4px 10px 4px" }}>
+            <PushNotificationToggle className="w-full justify-center" />
+          </div>
 
           {/* Profile trigger button */}
           <button

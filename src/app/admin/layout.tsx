@@ -11,6 +11,8 @@ import {
 import NotificationsDropdown from "@/components/NotificationsDropdown";
 import { useAdminUnread } from "@/hooks/useAdminUnread";
 import { ToastContainer, useToast } from "@/components/ui/Toast";
+import { clearSession, pushSessionToast, popSessionToast } from "@/lib/session";
+import { PushNotificationToggle } from "@/components/PushNotificationToggle";
 
 const NAV = [
   { label: "Dashboard",     href: ROUTES.ADMIN,           icon: LayoutDashboard },
@@ -32,21 +34,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   // Show toast from sessionStorage (e.g. after login)
   useEffect(() => {
-    const raw = sessionStorage.getItem("toast");
-    if (raw) {
-      try {
-        const t = JSON.parse(raw);
-        toast(t.type, t.title, t.message);
-      } catch { /* ignore */ }
-      sessionStorage.removeItem("toast");
-    }
+    const t = popSessionToast();
+    if (t) toast(t.type as "success" | "error" | "info", t.title, t.message);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("user");
-    localStorage.removeItem("token");
-    sessionStorage.setItem("toast", JSON.stringify({ type: "success", title: "Logged Out", message: "You have been logged out successfully." }));
+    clearSession();
+    pushSessionToast("success", "Logged Out", "You have been logged out successfully.");
     router.push(ROUTES.LOGIN);
   };
 
@@ -124,6 +119,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         {/* Bottom - Profile popover */}
         <div style={{ padding: "12px", borderTop: "1px solid var(--border-light)", position: "relative" }}>
+          
+          {/* Push notification toggle */}
+          <div style={{ padding: "0 4px 10px 4px" }}>
+            <PushNotificationToggle className="w-full justify-center" />
+          </div>
           
           {showProfileMenu && (
             <>

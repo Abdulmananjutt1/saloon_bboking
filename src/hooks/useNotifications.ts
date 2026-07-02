@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { API_ENDPOINTS } from "@/constants";
+import { statsApi } from "@/lib/api";
+import { buildWsUrl } from "@/lib/ws";
 
 export interface NotificationItem {
   id: string;
@@ -17,14 +18,6 @@ interface BookingPreview {
   date: string;
 }
 
-function buildWsUrl(): string {
-  const api = process.env.NEXT_PUBLIC_API_URL ?? "";
-  return api
-    .replace("http://", "ws://")
-    .replace("https://", "wss://")
-    .replace("/api", "") + "/ws";
-}
-
 export function useNotifications() {
   const [notifs, setNotifs]   = useState<NotificationItem[]>([]);
   const [unread, setUnread]   = useState(0);
@@ -32,9 +25,8 @@ export function useNotifications() {
 
   useEffect(() => {
     // 1. Seed with recent bookings from stats endpoint
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}${API_ENDPOINTS.STATS}`)
-      .then((r) => r.json())
-      .then((json) => {
+    statsApi.getStats()
+      .then((json: any) => {
         if (json.success && json.data?.recentBookings) {
           const initial: NotificationItem[] = json.data.recentBookings
             .slice(0, 3)
@@ -73,8 +65,8 @@ export function useNotifications() {
     return () => sock.close();
   }, []);
 
-  const markRead  = () => setUnread(0);
-  const clearAll  = () => { setNotifs([]); setUnread(0); };
+  const markRead = () => setUnread(0);
+  const clearAll = () => { setNotifs([]); setUnread(0); };
 
   return { notifs, unread, loading, markRead, clearAll };
 }
