@@ -874,24 +874,45 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.4) sepi
   background: var(--bg-secondary) !important;
 }
 
+/* CTA banner strip — always dark with white text */
+.cta-banner-bg .sal-h2,
+.cta-banner-bg .cta-banner-heading {
+  color: #ffffff !important;
+}
+.cta-banner-bg p,
+.cta-banner-bg .cta-banner-subtext {
+  color: rgba(255, 255, 255, 0.92) !important;
+}
+.cta-banner-bg .cta-banner-footer {
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 0.78rem;
+  margin-top: 32px;
+}
+.cta-banner-bg .cta-banner-footer p,
+.cta-banner-bg .cta-banner-footer div {
+  color: rgba(255, 255, 255, 0.88);
+}
+
 /* CTA banner strip in light — keep dark for contrast like image */
 [data-theme="light"] .cta-banner-bg {
   background: linear-gradient(135deg, #1a1610 0%, #241c0c 40%, #1a1610 100%) !important;
 }
 
-/* Force dark-theme text colors inside CTA dark strip in light mode */
+/* Force readable text inside CTA dark strip in light mode */
 [data-theme="light"] .cta-dark-content {
-  --text-primary:   #f5f0e8;
-  --text-secondary: #b8a98a;
-  --text-muted:     #6e6456;
   --gold:           #c9973b;
   --gold-light:     #e0b96a;
 }
-[data-theme="light"] .cta-dark-content .sal-h2 {
-  color: #f5f0e8 !important;
+[data-theme="light"] .cta-banner-bg .sal-h2,
+[data-theme="light"] .cta-banner-bg .cta-banner-heading {
+  color: #ffffff !important;
 }
-[data-theme="light"] .cta-dark-content p {
-  color: #b8a98a !important;
+[data-theme="light"] .cta-banner-bg p,
+[data-theme="light"] .cta-banner-bg .cta-banner-subtext,
+[data-theme="light"] .cta-banner-bg .cta-banner-footer,
+[data-theme="light"] .cta-banner-bg .cta-banner-footer p,
+[data-theme="light"] .cta-banner-bg .cta-banner-footer div {
+  color: rgba(255, 255, 255, 0.92) !important;
 }
 [data-theme="light"] .cta-dark-content .sal-btn-outline {
   color: var(--gold-light) !important;
@@ -900,6 +921,10 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.4) sepi
 [data-theme="light"] .cta-dark-content .sal-btn-outline:hover {
   color: #0d0c0a !important;
   border-color: transparent !important;
+}
+[data-theme="light"] .cta-dark-content .sal-btn-ghost {
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.35) !important;
 }
 
 /* Floating card bg */

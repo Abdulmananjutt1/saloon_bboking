@@ -1,7 +1,3 @@
-// ─────────────────────────────────────────────────────────
-//  PageHero — Shared interior page hero section
-//  Used on: Services, Stylists, Gallery, Contact pages
-// ─────────────────────────────────────────────────────────
 import Image from "next/image";
 import { Sparkles } from "lucide-react";
 
@@ -14,32 +10,38 @@ interface PageHeroProps {
   image: string;
   imageAlt: string;
   badge: string;
-  heading: React.ReactNode;  // can have <span className="text-gold">
+  badgeIcon?: React.ReactNode;
+  heading: React.ReactNode;
   subtext: string;
   stats?: StatItem[];
-  children?: React.ReactNode; // extra content below subtext (e.g. CTA buttons)
+  children?: React.ReactNode;
+  align?: "left" | "center";
 }
 
 export default function PageHero({
   image,
   imageAlt,
   badge,
+  badgeIcon,
   heading,
   subtext,
   stats,
   children,
+  align = "center",
 }: PageHeroProps) {
+  const isCenter = align === "center";
+
   return (
     <section
+      className="page-hero-section"
       style={{
         position: "relative",
-        minHeight: "60vh",
+        minHeight: "80vh",
         display: "flex",
         alignItems: "center",
         overflow: "hidden",
       }}
     >
-      {/* Background image */}
       <div style={{ position: "absolute", inset: 0 }}>
         <Image
           src={image}
@@ -68,7 +70,6 @@ export default function PageHero({
         />
       </div>
 
-      {/* Gold glow orb */}
       <div
         style={{
           position: "absolute",
@@ -82,13 +83,18 @@ export default function PageHero({
         }}
       />
 
-      {/* Content */}
       <div
-        className="sal-container"
+        className="sal-container page-hero-inner"
         style={{ position: "relative", paddingTop: 120, paddingBottom: 80, width: "100%" }}
       >
-        <div style={{ maxWidth: 680, textAlign: "center", margin: "0 auto" }}>
-          {/* Badge */}
+        <div
+          className="hero-content"
+          style={{
+            maxWidth: isCenter ? 680 : 720,
+            textAlign: isCenter ? "center" : "left",
+            margin: isCenter ? "0 auto" : 0,
+          }}
+        >
           <div
             className="sal-glass-gold anim-up"
             style={{
@@ -96,11 +102,11 @@ export default function PageHero({
               alignItems: "center",
               gap: 8,
               borderRadius: 99,
-              padding: "6px 20px",
+              padding: isCenter ? "6px 20px" : "6px 16px",
               marginBottom: 24,
             }}
           >
-            <Sparkles style={{ width: 14, height: 14, color: "var(--gold)" }} />
+            {badgeIcon ?? <Sparkles style={{ width: 14, height: 14, color: "var(--gold)" }} />}
             <span
               style={{
                 fontSize: "0.7rem",
@@ -114,65 +120,88 @@ export default function PageHero({
             </span>
           </div>
 
-          {/* Heading */}
           <h1
             className="sal-h1 anim-up anim-d2 hero-text-shadow"
-            style={{ marginBottom: 20, fontSize: "clamp(2.6rem, 6vw, 4.5rem)" }}
+            style={{
+              marginBottom: 20,
+              fontSize: isCenter ? "clamp(2.6rem, 6vw, 4.5rem)" : "clamp(2.6rem, 6vw, 4rem)",
+            }}
           >
             {heading}
           </h1>
 
-          {/* Subtext */}
           <p
             className="anim-up anim-d3"
             style={{
-              fontSize: "1rem",
+              fontSize: isCenter ? "1rem" : "0.95rem",
               color: "var(--text-secondary)",
               lineHeight: 1.85,
               marginBottom: stats || children ? 40 : 0,
-              maxWidth: 560,
-              margin: "0 auto 40px",
+              maxWidth: isCenter ? 560 : 600,
+              margin: isCenter ? "0 auto 40px" : "0 0 36px",
             }}
           >
             {subtext}
           </p>
 
-          {/* Custom children (buttons, etc.) */}
           {children && (
-            <div className="anim-up anim-d4" style={{ marginBottom: stats ? 40 : 0 }}>
+            <div
+              className="anim-up anim-d4"
+              style={{
+                marginBottom: stats ? 40 : 0,
+                display: "flex",
+                justifyContent: isCenter ? "center" : "flex-start",
+              }}
+            >
               {children}
             </div>
           )}
 
-          {/* Stats row */}
           {stats && stats.length > 0 && (
             <div
               className="anim-up anim-d4"
-              style={{ display: "flex", gap: 36, justifyContent: "center", flexWrap: "wrap" }}
+              style={{
+                display: "flex",
+                gap: isCenter ? 36 : 32,
+                justifyContent: isCenter ? "center" : "flex-start",
+                flexWrap: "wrap",
+              }}
             >
               {stats.map(({ value, label }) => (
-                <div key={label} style={{ textAlign: "center" }}>
-                  <p
-                    style={{
-                      fontSize: "1.8rem",
-                      fontWeight: 900,
-                      color: "var(--gold-light)",
-                      lineHeight: 1,
-                    }}
-                  >
-                    {value}
-                  </p>
-                  <p
-                    style={{
-                      fontSize: "0.72rem",
-                      color: "var(--text-muted)",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.18em",
-                      marginTop: 4,
-                    }}
-                  >
-                    {label}
-                  </p>
+                <div key={label} style={{ textAlign: isCenter ? "center" : "left" }}>
+                  {isCenter ? (
+                    <>
+                      <p style={{ fontSize: "1.8rem", fontWeight: 900, color: "var(--gold-light)", lineHeight: 1 }}>
+                        {value}
+                      </p>
+                      <p
+                        style={{
+                          fontSize: "0.72rem",
+                          color: "var(--text-muted)",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.18em",
+                          marginTop: 4,
+                        }}
+                      >
+                        {label}
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="stat-num">{value}</p>
+                      <p
+                        style={{
+                          fontSize: "0.7rem",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.15em",
+                          color: "var(--text-muted)",
+                          marginTop: 4,
+                        }}
+                      >
+                        {label}
+                      </p>
+                    </>
+                  )}
                 </div>
               ))}
             </div>
