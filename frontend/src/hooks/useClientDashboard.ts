@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { ROUTES, type BookingStatus } from "@/constants";
-import { bookingsApi, chatApi } from "@/lib/api";
+import { bookingsApi, chatApi, authApi } from "@/lib/api";
 import { buildWsUrl } from "@/lib/ws";
-import { getSession, clearSession, pushSessionToast } from "@/lib/session";
+import { getSession, clearSession, pushSessionToast, getToken, saveSession } from "@/lib/session";
 
 export interface ClientBooking {
   id: string;
@@ -44,7 +44,7 @@ type WsStatus = "connecting" | "connected" | "disconnected";
 const LAST_READ_KEY = "gs_chat_last_read";
 
 export function useClientDashboard() {
-  const [user, setUser]           = useState<{ name: string; email: string; phone: string } | null>(null);
+  const [user, setUser]           = useState<{ id: string; name: string; email: string; phone: string } | null>(null);
   const [bookings, setBookings]   = useState<ClientBooking[]>([]);
   const [loading, setLoading]     = useState(true);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
@@ -212,6 +212,24 @@ export function useClientDashboard() {
     window.location.href = ROUTES.LOGIN;
   };
 
+  // ── Update profile ────────────────────────────────────────────────────────
+  const updateProfile = async (name: string, phone: string): Promise<{ success: boolean; error?: string; errors?: Record<string, string> }> => {
+    const token = getToken();
+    if (!token) return { success: false, error: "Not authenticated" };
+    try {
+      const res = await authApi.updateProfile({ name, phone }, token) as { success: boolean; data?: { name: string; email: string; phone: string }; error?: string; errors?: Record<string, string> };
+      if (res.success && res.data) {
+        // Update localStorage session so sidebar name updates immediately
+        const session = getSession();
+        if (session) saveSession({ ...session, name: res.data.name, phone: res.data.phone }, token);
+        setUser((prev) => prev ? { ...prev, name: res.data!.name, phone: res.data!.phone } : prev);
+      }
+      return res;
+    } catch {
+      return { success: false, error: "Network error. Please try again." };
+    }
+  };
+
   // ── Derived data ─────────────────────────────────────────────────────────────
   const upcomingBookings = bookings.filter((b) => b.status === "pending" || b.status === "confirmed");
   const pastBookings     = bookings.filter((b) => b.status === "completed" || b.status === "cancelled");
@@ -227,6 +245,6 @@ export function useClientDashboard() {
     chatMessages, newMessage, setNewMessage,
     wsStatus, sendMessage, chatEndRef,
     unreadCount, markChatRead, markChatClosed,
-    logout,
+    logout, updateProfile,
   };
 }

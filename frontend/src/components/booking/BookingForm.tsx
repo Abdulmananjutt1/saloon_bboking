@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 import { TIME_SLOTS, ROUTES } from "@/constants";
 import { formatPrice, formatDuration, getTodayDate } from "@/lib/utils";
+import { getStylistSlotsForDate } from "@/lib/availability";
 import {
   Scissors, Clock, User, CheckCircle,
   ChevronRight, ChevronLeft, Calendar,
@@ -21,12 +22,19 @@ type ApiService = {
   discountedPrice?: number | null; image: string; popular: boolean;
   forGender: string; isActive: boolean;
 };
+type ApiStylistAvailability = {
+  dayOfWeek: number;
+  isWorking: boolean;
+  startTime: string;
+  endTime:   string;
+};
 type ApiStylist = {
   id: string; name: string; role: string; avatar: string;
   bio: string; experience: number; rating: number;
   reviewCount: number; available: boolean; isActive: boolean;
   specialties: { id: string; name: string }[];
   slots?: { id: string; stylistId: string; time: string }[];
+  availability?: ApiStylistAvailability[];
 };
 
 interface StepDef { n: number; label: string; icon: React.ComponentType<{ style?: React.CSSProperties }> }
@@ -869,7 +877,7 @@ export default function BookingForm({ preSelectedService, preSelectedStylist }: 
                 const selected = selectedStylist === s.id;
                 const unavail = !s.available;
                 return (
-                  <button key={s.id} onClick={() => s.available && setSelectedStylist(s.id)} disabled={unavail} style={{
+                  <button key={s.id} onClick={() => { if (s.available) { setSelectedStylist(s.id); setSelectedTime(""); } }} disabled={unavail} style={{
                     textAlign: "left", padding: "14px 16px", borderRadius: 14,
                     cursor: unavail ? "not-allowed" : "pointer",
                     border: selected ? "1.5px solid rgba(201,151,59,0.6)" : "1.5px solid var(--border-light)",
@@ -946,34 +954,41 @@ export default function BookingForm({ preSelectedService, preSelectedStylist }: 
               <label style={{ display: "block", fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.15em", color: "var(--text-muted)", marginBottom: 12 }}>
                 Available Slots
               </label>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                {TIME_SLOTS.map((slot) => {
-                  const available = stylist?.slots ? stylist.slots.some((s) => s.time === slot) : true;
-                  const selected = selectedTime === slot;
+              {/* Compute slots based on stylist availability for the selected date */}
+              {(() => {
+                const dynamicSlots = getStylistSlotsForDate(
+                  stylist?.availability ?? [],
+                  selectedDate,
+                  TIME_SLOTS,
+                );
+                if (dynamicSlots.length === 0) {
                   return (
-                    <button key={slot} disabled={!available} onClick={() => setSelectedTime(slot)} style={{
-                      padding: "9px 16px", borderRadius: 10, fontSize: "0.78rem", fontWeight: 600,
-                      cursor: available ? "pointer" : "not-allowed",
-                      border: selected
-                        ? "1.5px solid rgba(201,151,59,0.6)"
-                        : available
-                        ? "1.5px solid var(--border-light)"
-                        : "1.5px solid transparent",
-                      background: selected
-                        ? "var(--grad-gold-btn)"
-                        : available
-                        ? "var(--bg-secondary)"
-                        : "rgba(0,0,0,0.02)",
-                      color: selected ? "#0d0c0a" : available ? "var(--text-secondary)" : "var(--text-muted)",
-                      opacity: available ? 1 : 0.35,
-                      boxShadow: selected ? "0 3px 14px rgba(201,151,59,0.25)" : "none",
-                      transition: "all 0.2s"
-                    }}>
-                      {slot}
-                    </button>
+                    <div style={{ padding: "24px 0", textAlign: "center", fontSize: "0.82rem", color: "var(--text-muted)", background: "rgba(255,255,255,0.02)", borderRadius: 12, border: "1px dashed var(--border-light)" }}>
+                      This stylist is not working on the selected day. Please choose a different date.
+                    </div>
                   );
-                })}
-              </div>
+                }
+                return (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                    {dynamicSlots.map((slot) => {
+                      const selected = selectedTime === slot;
+                      return (
+                        <button key={slot} onClick={() => setSelectedTime(slot)} style={{
+                          padding: "9px 16px", borderRadius: 10, fontSize: "0.78rem", fontWeight: 600,
+                          cursor: "pointer",
+                          border: selected ? "1.5px solid rgba(201,151,59,0.6)" : "1.5px solid var(--border-light)",
+                          background: selected ? "var(--grad-gold-btn)" : "var(--bg-secondary)",
+                          color: selected ? "#0d0c0a" : "var(--text-secondary)",
+                          boxShadow: selected ? "0 3px 14px rgba(201,151,59,0.25)" : "none",
+                          transition: "all 0.2s"
+                        }}>
+                          {slot}
+                        </button>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
             </div>
             <NavButtons step={step} nextDisabled={!selectedDate || !selectedTime} onNext={() => setStep(4)} onBack={() => setStep(2)} />
           </div>

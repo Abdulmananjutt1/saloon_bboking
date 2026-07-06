@@ -1,142 +1,184 @@
-import type { Metadata } from "next";
-import Image from "next/image";
-import { STYLISTS } from "@/lib/data/salon";
-import { Plus, Edit2, Trash2, Award, Star } from "lucide-react";
+"use client";
 
-export const metadata: Metadata = { title: "Stylists — Admin" };
+import { useState } from "react";
+import { Plus, Users, Search } from "lucide-react";
+import { useStylists, type Stylist, type StylistFormData } from "@/hooks/useStylists";
+import { useToast } from "@/components/ui/Toast";
+import { ToastContainer } from "@/components/ui/Toast";
+import { StylistCard } from "@/components/admin/stylists/StylistCard";
+import { StylistModal } from "@/components/admin/stylists/StylistModal";
+import { DeleteConfirmModal } from "@/components/admin/stylists/DeleteConfirmModal";
 
 export default function AdminStylistsPage() {
+  const { stylists, loading, error, createStylist, updateStylist, deleteStylist } = useStylists();
+  const { toasts, toast, remove } = useToast();
+
+  // Search
+  const [search, setSearch] = useState("");
+
+  // Add / Edit modal
+  const [modalOpen, setModalOpen]   = useState(false);
+  const [editing, setEditing]       = useState<Stylist | null>(null);
+  const [saving, setSaving]         = useState(false);
+  const [modalError, setModalError] = useState("");
+
+  // Delete modal
+  const [deleteTarget, setDeleteTarget] = useState<Stylist | null>(null);
+  const [deleting, setDeleting]         = useState(false);
+
+  const filtered = stylists.filter((s) =>
+    s.name.toLowerCase().includes(search.toLowerCase()) ||
+    s.role.toLowerCase().includes(search.toLowerCase())
+  );
+
+  /* ── Handlers ── */
+  const openAdd = () => { setEditing(null); setModalError(""); setModalOpen(true); };
+  const openEdit = (s: Stylist) => { setEditing(s); setModalError(""); setModalOpen(true); };
+  const closeModal = () => { setModalOpen(false); setEditing(null); };
+
+  const handleSubmit = async (data: StylistFormData) => {
+    setSaving(true);
+    setModalError("");
+    const result = editing
+      ? await updateStylist(editing.id, data)
+      : await createStylist(data);
+    setSaving(false);
+    if (result.ok) {
+      toast("success", editing ? "Stylist updated" : "Stylist added", editing ? `${data.name} has been updated.` : `${data.name} has been added.`);
+      closeModal();
+    } else {
+      setModalError(result.error ?? "Something went wrong");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    const result = await deleteStylist(deleteTarget.id);
+    setDeleting(false);
+    if (result.ok) {
+      toast("success", "Stylist removed", `${deleteTarget.name} has been removed.`);
+      setDeleteTarget(null);
+    } else {
+      toast("error", "Failed to remove", result.error ?? "Something went wrong");
+      setDeleteTarget(null);
+    }
+  };
+
   return (
     <div style={{ maxWidth: 1280, margin: "0 auto" }}>
+      <ToastContainer toasts={toasts} onRemove={remove} />
 
-      {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16, marginBottom: 32 }}>
+      {/* ── Header ── */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16, marginBottom: 28 }}>
         <div>
           <h1 style={{ fontSize: "2.4rem", fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.02em", marginBottom: 4, fontFamily: "var(--font-display), Georgia, serif" }}>
             Stylists
           </h1>
           <p style={{ fontSize: "0.82rem", color: "var(--text-muted)" }}>
-            {STYLISTS.length} stylists · {STYLISTS.filter((s) => s.available).length} available
+            {stylists.length} stylists · {stylists.filter((s) => s.available).length} available
           </p>
         </div>
-        <button style={{
-          display: "flex", alignItems: "center", gap: 8,
-          padding: "11px 20px", borderRadius: 11,
-          background: "var(--grad-gold-btn)",
-          border: "none", color: "#0d0c0a",
-          fontSize: "0.82rem", fontWeight: 700, cursor: "pointer",
-          boxShadow: "0 4px 20px rgba(201,151,59,0.3)"
-        }}>
+        <button
+          onClick={openAdd}
+          style={{
+            display: "flex", alignItems: "center", gap: 8,
+            padding: "11px 20px", borderRadius: 11,
+            background: "var(--grad-gold-btn)", border: "none",
+            color: "#0d0c0a", fontSize: "0.82rem", fontWeight: 700,
+            cursor: "pointer", boxShadow: "0 4px 20px rgba(201,151,59,0.3)"
+          }}
+        >
           <Plus style={{ width: 15, height: 15 }} /> Add Stylist
         </button>
       </div>
 
-      {/* Grid */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 20 }}>
-        {STYLISTS.map((s) => (
-          <div key={s.id} style={{
-            background: "var(--bg-card)", border: "1px solid var(--border-light)",
-            borderRadius: 20, overflow: "hidden",
-            transition: "transform 0.25s ease, box-shadow 0.25s ease"
-          }}>
-            {/* Image */}
-            <div style={{ position: "relative", height: 220 }}>
-              <Image src={s.avatar} alt={s.name} fill style={{ objectFit: "cover" }} sizes="33vw" />
-              <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(10,9,7,0.92) 0%, rgba(10,9,7,0.2) 50%, transparent 100%)" }} />
-
-              {/* Experience badge */}
-              <div style={{
-                position: "absolute", top: 12, left: 12,
-                display: "flex", alignItems: "center", gap: 5,
-                padding: "4px 10px", borderRadius: 99,
-                background: "rgba(13,12,10,0.75)", backdropFilter: "blur(8px)",
-                border: "1px solid rgba(201,151,59,0.3)"
-              }}>
-                <Award style={{ width: 11, height: 11, color: "var(--gold)" }} />
-                <span style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--gold-light)" }}>{s.experience}y exp</span>
-              </div>
-
-              {/* Action buttons */}
-              <div style={{ position: "absolute", top: 12, right: 12, display: "flex", gap: 6 }}>
-                <button style={{
-                  width: 30, height: 30, borderRadius: 8, border: "none", cursor: "pointer",
-                  background: "rgba(13,12,10,0.75)", backdropFilter: "blur(8px)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  color: "var(--status-completed)", transition: "all 0.2s"
-                }}>
-                  <Edit2 style={{ width: 13, height: 13 }} />
-                </button>
-                <button style={{
-                  width: 30, height: 30, borderRadius: 8, border: "none", cursor: "pointer",
-                  background: "rgba(13,12,10,0.75)", backdropFilter: "blur(8px)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  color: "var(--status-cancelled)", transition: "all 0.2s"
-                }}>
-                  <Trash2 style={{ width: 13, height: 13 }} />
-                </button>
-              </div>
-
-              {/* Name overlay */}
-              <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "16px 18px" }}>
-                <p style={{ fontSize: "1rem", fontWeight: 700, color: "#f5f0e8", marginBottom: 2 }}>{s.name}</p>
-                <p style={{ fontSize: "0.72rem", color: "var(--gold-light)" }}>{s.role}</p>
-              </div>
-            </div>
-
-            {/* Body */}
-            <div style={{ padding: "16px 18px" }}>
-
-              {/* Rating + Status */}
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  {[1,2,3,4,5].map((n) => (
-                    <Star key={n} style={{ width: 13, height: 13, color: "var(--status-pending)", fill: n <= Math.round(s.rating) ? "var(--status-pending)" : "transparent" }} />
-                  ))}
-                  <span style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--text-primary)", marginLeft: 2 }}>{s.rating}</span>
-                </div>
-                <span style={{
-                  fontSize: "0.65rem", fontWeight: 700, padding: "3px 10px", borderRadius: 99,
-                  textTransform: "uppercase", letterSpacing: "0.1em",
-                  background: s.available ? "var(--status-confirmed-bg)" : "rgba(100,116,139,0.1)",
-                  color: s.available ? "var(--status-confirmed)" : "var(--text-muted)",
-                  border: `1px solid ${s.available ? "var(--status-confirmed-border)" : "rgba(100,116,139,0.2)"}`
-                }}>
-                  {s.available ? "Available" : "On Leave"}
-                </span>
-              </div>
-
-              {/* Specialties */}
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 16 }}>
-                {s.specialties.map((sp) => (
-                  <span key={sp} style={{
-                    fontSize: "0.65rem", fontWeight: 600, padding: "3px 9px", borderRadius: 99,
-                    background: "rgba(201,151,59,0.08)", border: "1px solid rgba(201,151,59,0.18)",
-                    color: "var(--gold-light)"
-                  }}>{sp}</span>
-                ))}
-              </div>
-
-              {/* Stats */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
-                {[
-                  { label: "Reviews", value: s.reviewCount.toLocaleString() },
-                  { label: "Rating",  value: `${s.rating}★` },
-                  { label: "Slots",   value: s.available ? s.slots.length : 0 },
-                ].map((stat) => (
-                  <div key={stat.label} style={{
-                    padding: "10px 8px", borderRadius: 12, textAlign: "center",
-                    background: "var(--bg-secondary)", border: "1px solid var(--border-light)"
-                  }}>
-                    <p style={{ fontSize: "0.88rem", fontWeight: 800, color: "var(--text-primary)", marginBottom: 2 }}>{stat.value}</p>
-                    <p style={{ fontSize: "0.6rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.1em" }}>{stat.label}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        ))}
+      {/* ── Search ── */}
+      <div style={{ position: "relative", maxWidth: 360, marginBottom: 28 }}>
+        <Search style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", width: 15, height: 15, color: "var(--text-muted)" }} />
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search by name or role…"
+          style={{
+            width: "100%", padding: "10px 12px 10px 36px",
+            borderRadius: 10, border: "1px solid var(--border-light)",
+            background: "var(--bg-card)", color: "var(--text-primary)",
+            fontSize: "0.85rem", outline: "none", boxSizing: "border-box"
+          }}
+        />
       </div>
 
+      {/* ── Loading ── */}
+      {loading && (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 20 }}>
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} style={{ height: 380, borderRadius: 20, background: "var(--bg-card)", border: "1px solid var(--border-light)", animation: "pulse 1.4s ease-in-out infinite" }} />
+          ))}
+        </div>
+      )}
+
+      {/* ── Error ── */}
+      {!loading && error && (
+        <div style={{ padding: "24px", borderRadius: 14, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", color: "#f87171", fontSize: "0.85rem" }}>
+          {error}
+        </div>
+      )}
+
+      {/* ── Empty ── */}
+      {!loading && !error && filtered.length === 0 && (
+        <div style={{ textAlign: "center", padding: "80px 0" }}>
+          <Users style={{ width: 48, height: 48, color: "var(--text-muted)", margin: "0 auto 16px" }} />
+          <p style={{ fontSize: "1rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: 8 }}>
+            {search ? "No stylists found" : "No stylists yet"}
+          </p>
+          <p style={{ fontSize: "0.82rem", color: "var(--text-muted)", marginBottom: 24 }}>
+            {search ? "Try a different search term" : "Add your first stylist to get started"}
+          </p>
+          {!search && (
+            <button onClick={openAdd} style={{
+              display: "inline-flex", alignItems: "center", gap: 8,
+              padding: "11px 24px", borderRadius: 11, border: "none",
+              background: "var(--grad-gold-btn)", color: "#0d0c0a",
+              fontSize: "0.85rem", fontWeight: 700, cursor: "pointer"
+            }}>
+              <Plus style={{ width: 15, height: 15 }} /> Add First Stylist
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* ── Grid ── */}
+      {!loading && !error && filtered.length > 0 && (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 20 }}>
+          {filtered.map((s) => (
+            <StylistCard
+              key={s.id}
+              stylist={s}
+              onEdit={openEdit}
+              onDelete={(s) => setDeleteTarget(s)}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* ── Modals ── */}
+      <StylistModal
+        open={modalOpen}
+        stylist={editing}
+        saving={saving}
+        error={modalError}
+        onClose={closeModal}
+        onSubmit={handleSubmit}
+      />
+      <DeleteConfirmModal
+        stylist={deleteTarget}
+        deleting={deleting}
+        onConfirm={handleDelete}
+        onClose={() => setDeleteTarget(null)}
+      />
+
+      <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }`}</style>
     </div>
   );
 }

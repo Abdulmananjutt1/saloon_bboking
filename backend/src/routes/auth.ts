@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 import { validateLogin, validateRegister, hasErrors } from "../validations";
 import { hashPassword } from "../lib/hash";
 import { JWT_SECRET } from "../lib/config";
+import { requireAdmin, requireAuth, AuthRequest } from "../middleware/auth";
 
 const router = Router();
 
@@ -66,6 +67,46 @@ router.post("/login", async (req: Request, res: Response) => {
   } catch (err) {
     console.error("[POST /auth/login]", err);
     res.status(500).json({ success: false, error: "Login failed. Please try again." });
+  }
+});
+
+// GET /auth/users — admin only, returns list of all CLIENT users
+router.get("/users", requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const users = await prisma.user.findMany({
+      where: { role: "CLIENT" },
+      select: { id: true, name: true, email: true, phone: true, createdAt: true },
+      orderBy: { name: "asc" },
+    });
+    res.json({ success: true, data: users });
+  } catch (err) {
+    console.error("[GET /auth/users]", err);
+    res.status(500).json({ success: false, error: "Failed to fetch users" });
+  }
+});
+
+// PATCH /auth/profile — authenticated user updates their own name & phone
+router.patch("/profile", requireAuth as any, async (req: AuthRequest, res: Response) => {
+  try {
+    const { name, phone } = req.body as { name?: string; phone?: string };
+    const errors: Record<string, string> = {};
+
+    if (!name?.trim())  errors.name  = "Name is required";
+    if (!phone?.trim()) errors.phone = "Phone number is required";
+    if (Object.keys(errors).length) {
+      return res.status(422).json({ success: false, errors });
+    }
+
+    const updated = await prisma.user.update({
+      where: { id: req.user!.userId },
+      data:  { name: name!.trim(), phone: phone!.trim() },
+      select: { id: true, name: true, email: true, phone: true },
+    });
+
+    res.json({ success: true, data: updated });
+  } catch (err) {
+    console.error("[PATCH /auth/profile]", err);
+    res.status(500).json({ success: false, error: "Failed to update profile" });
   }
 });
 

@@ -1,14 +1,16 @@
 import express    from "express";
 import cors       from "cors";
 import http       from "http";
-import bookingsRouter from "./routes/bookings";
-import clientsRouter  from "./routes/clients";
-import authRouter     from "./routes/auth";
-import servicesRouter from "./routes/services";
-import stylistsRouter from "./routes/stylists";
-import statsRouter    from "./routes/stats";
-import chatRouter     from "./routes/chat";
-import pushRouter     from "./routes/push";
+import bookingsRouter  from "./routes/bookings";
+import clientsRouter   from "./routes/clients";
+import authRouter      from "./routes/auth";
+import servicesRouter  from "./routes/services";
+import stylistsRouter  from "./routes/stylists";
+import statsRouter     from "./routes/stats";
+import chatRouter      from "./routes/chat";
+import pushRouter      from "./routes/push";
+import settingsRouter  from "./routes/settings";
+import payrollRouter   from "./routes/payroll";
 import { attachWebSocketServer } from "./websocket/server";
 
 const app  = express();
@@ -19,8 +21,8 @@ app.use(cors({
   origin: ["http://localhost:3000", "http://localhost:3001"],
   credentials: true,
 }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 // ── Request logger ────────────────────────────
 app.use((req, _res, next) => {
@@ -37,6 +39,8 @@ app.use("/api/stylists", stylistsRouter);
 app.use("/api/stats",    statsRouter);
 app.use("/api/chat",     chatRouter);
 app.use("/api/push",     pushRouter);
+app.use("/api/settings", settingsRouter);
+app.use("/api/payroll",  payrollRouter);
 
 // ── Health check ──────────────────────────────
 app.get("/health", (_req, res) => {

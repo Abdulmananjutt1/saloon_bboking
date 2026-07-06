@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
-import { Scissors, Mail, Sparkles, ArrowLeft, CheckCircle, ArrowRight } from "lucide-react";
+import { Scissors, Mail, Sparkles, CheckCircle, ArrowRight, Gem, Calendar, BadgeCheck } from "lucide-react";
 import { APP_NAME, ROUTES } from "@/constants";
 
 type Step = "email" | "sent";
@@ -74,18 +74,18 @@ export default function ForgotPasswordPage() {
           {/* Feature rows */}
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             {[
-              { icon: "✂️", text: "Expert certified stylists" },
-              { icon: "💎", text: "Premium Loreal & Wella products" },
-              { icon: "📅", text: "Instant online booking" },
-              { icon: "✅", text: "100% satisfaction guarantee" },
-            ].map(({ icon, text }) => (
+              { icon: Scissors,    text: "Expert certified stylists" },
+              { icon: Gem,         text: "Premium Loreal & Wella products" },
+              { icon: Calendar,    text: "Instant online booking" },
+              { icon: BadgeCheck,  text: "100% satisfaction guarantee" },
+            ].map(({ icon: Icon, text }) => (
               <div key={text} style={{
                 display: "flex", alignItems: "center", gap: 14,
                 padding: "12px 18px", borderRadius: 12,
                 background: "rgba(255,255,255,0.05)",
                 border: "1px solid rgba(255,255,255,0.09)"
               }}>
-                <span style={{ fontSize: "1.05rem" }}>{icon}</span>
+                <Icon style={{ width: 16, height: 16, color: "var(--gold)", flexShrink: 0 }} />
                 <span style={{ fontSize: "0.86rem", color: "rgba(255,255,255,0.8)", fontWeight: 500 }}>{text}</span>
               </div>
             ))}
@@ -140,22 +140,12 @@ export default function ForgotPasswordPage() {
         {/* ══ STEP 1 — Enter email ══ */}
         {step === "email" && (
           <>
-            {/* Back link */}
-            <Link href={ROUTES.LOGIN} style={{
-              display: "inline-flex", alignItems: "center", gap: 6,
-              fontSize: "0.8rem", color: "var(--text-muted)", textDecoration: "none",
-              marginBottom: 40, transition: "color 0.2s"
-            }}>
-              <ArrowLeft style={{ width: 14, height: 14 }} />
-              Back to Sign In
-            </Link>
-
             {/* Mail icon box */}
             <div style={{
               width: 72, height: 72, borderRadius: 22,
               background: "var(--grad-gold-btn)",
               display: "flex", alignItems: "center", justifyContent: "center",
-              marginBottom: 36,
+              marginBottom: 36, marginLeft: "auto", marginRight: "auto",
               boxShadow: "0 12px 40px rgba(201,151,59,0.35)"
             }}>
               <Mail style={{ width: 32, height: 32, color: "#0d0c0a" }} />

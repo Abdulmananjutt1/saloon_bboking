@@ -4,6 +4,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import StarRating from "@/components/ui/StarRating";
 import ScrollReveal from "@/components/ScrollReveal";
+import CtaBanner from "@/components/CtaBanner";
 import { ROUTES, APP_PHONE } from "@/constants";
 import { SERVICES, STYLISTS, REVIEWS } from "@/lib/data/salon";
 import { formatPrice, formatDuration } from "@/lib/utils";
@@ -436,87 +437,55 @@ export default function HomePage() {
 
             <div className="brands-track">
               {(() => {
-                const brands: { name: string; sub: string; svg: React.ReactNode }[] = [
+                const brands = [
                   {
-                    name: "MOROCCANOIL", sub: "Moroccanoil",
-                    svg: (
-                      <svg viewBox="0 0 160 36" width="120" height="27" fill="none">
-                        <text x="0" y="26" fontFamily="Georgia,serif" fontWeight="700" fontSize="22" fill="currentColor" letterSpacing="1">moroccanoil</text>
-                      </svg>
-                    ),
+                    name: "Moroccanoil",
+                    img: "https://images.unsplash.com/photo-1571781926291-c477ebfd024b?w=300&q=80",
                   },
                   {
-                    name: "GHD", sub: "GHD",
-                    svg: (
-                      <svg viewBox="0 0 80 44" width="60" height="33" fill="none">
-                        <text x="0" y="36" fontFamily="Arial,sans-serif" fontWeight="900" fontSize="40" fill="currentColor" letterSpacing="-1">ghd</text>
-                      </svg>
-                    ),
+                    name: "GHD",
+                    img: "https://images.unsplash.com/photo-1522338242992-e1a54906a8da?w=300&q=80",
                   },
                   {
-                    name: "L'ORÉAL", sub: "L'Oréal",
-                    svg: (
-                      <svg viewBox="0 0 130 36" width="110" height="30" fill="none">
-                        <text x="0" y="26" fontFamily="Arial,sans-serif" fontWeight="900" fontSize="26" fill="currentColor" letterSpacing="2">L&apos;ORÉAL</text>
-                      </svg>
-                    ),
+                    name: "L'Oréal",
+                    img: "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=300&q=80",
                   },
                   {
-                    name: "WELLA", sub: "Wella",
-                    svg: (
-                      <svg viewBox="0 0 100 36" width="85" height="30" fill="none">
-                        <text x="0" y="26" fontFamily="Georgia,serif" fontWeight="700" fontSize="28" fill="currentColor" letterSpacing="3">Wella</text>
-                      </svg>
-                    ),
+                    name: "Wella",
+                    img: "https://images.unsplash.com/photo-1556228453-efd6c1ff04f6?w=300&q=80",
                   },
                   {
-                    name: "KÉRASTASE", sub: "Kérastase",
-                    svg: (
-                      <svg viewBox="0 0 160 36" width="130" height="28" fill="none">
-                        <text x="0" y="25" fontFamily="Georgia,serif" fontWeight="400" fontSize="22" fill="currentColor" letterSpacing="4">KÉRASTASE</text>
-                      </svg>
-                    ),
+                    name: "Kérastase",
+                    img: "https://images.unsplash.com/photo-1608248543803-ba4f8c70ae0b?w=300&q=80",
                   },
                   {
-                    name: "SCHWARZKOPF", sub: "Schwarzkopf",
-                    svg: (
-                      <svg viewBox="0 0 180 36" width="140" height="28" fill="none">
-                        <text x="0" y="25" fontFamily="Arial,sans-serif" fontWeight="700" fontSize="20" fill="currentColor" letterSpacing="1">SCHWARZKOPF</text>
-                      </svg>
-                    ),
+                    name: "Schwarzkopf",
+                    img: "https://images.unsplash.com/photo-1585751119414-ef2636f8aede?w=300&q=80",
                   },
                   {
-                    name: "MATRIX", sub: "Matrix",
-                    svg: (
-                      <svg viewBox="0 0 120 36" width="95" height="28" fill="none">
-                        <text x="0" y="26" fontFamily="Arial,sans-serif" fontWeight="900" fontSize="26" fill="currentColor" letterSpacing="4">MATRIX</text>
-                      </svg>
-                    ),
+                    name: "Matrix",
+                    img: "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=300&q=80",
                   },
                   {
-                    name: "REVLON", sub: "Revlon",
-                    svg: (
-                      <svg viewBox="0 0 120 36" width="95" height="28" fill="none">
-                        <text x="0" y="26" fontFamily="Arial,sans-serif" fontWeight="900" fontSize="26" fill="currentColor" letterSpacing="3">REVLON</text>
-                      </svg>
-                    ),
+                    name: "Revlon",
+                    img: "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=300&q=80",
                   },
                   {
-                    name: "REDKEN", sub: "Redken",
-                    svg: (
-                      <svg viewBox="0 0 120 36" width="95" height="28" fill="none">
-                        <text x="0" y="26" fontFamily="Georgia,serif" fontWeight="700" fontSize="26" fill="currentColor" letterSpacing="2">Redken</text>
-                      </svg>
-                    ),
+                    name: "Redken",
+                    img: "https://images.unsplash.com/photo-1617897903246-719242758050?w=300&q=80",
                   },
                 ];
                 return [...brands, ...brands];
               })().map((brand, i) => (
                 <div key={i} className="brand-card">
                   <div className="brand-logo-wrap">
-                    {brand.svg}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={brand.img}
+                      alt=""
+                    />
                   </div>
-                  <span className="brand-sub">{brand.sub}</span>
+                  <span className="brand-name">{brand.name}</span>
                 </div>
               ))}
             </div>
@@ -541,54 +510,57 @@ export default function HomePage() {
               align-items: center;
               justify-content: center;
               gap: 8px;
-              min-width: 150px;
-              height: 100px;
+              min-width: 130px;
+              height: 130px;
               border-radius: 16px;
-              background: var(--bg-card);
-              border: 1px solid var(--border-light);
+              background: transparent;
+              border: none;
               flex-shrink: 0;
               transition: all 0.3s ease;
               cursor: default;
-              padding: 16px 20px;
+              padding: 8px;
+              overflow: hidden;
             }
             .brand-card:hover {
-              border-color: var(--border-hover);
-              box-shadow: 0 8px 30px rgba(201,151,59,0.12);
               transform: translateY(-4px);
             }
             .brand-logo-wrap {
-              color: var(--text-secondary);
-              opacity: 0.5;
-              transition: opacity 0.3s ease, color 0.3s ease;
+              width: 100%;
+              height: 100%;
+              border-radius: 14px;
+              overflow: hidden;
               display: flex;
               align-items: center;
               justify-content: center;
+              transition: all 0.3s ease;
+              opacity: 1;
+            }
+            .brand-logo-wrap img {
+              width: 100%;
+              height: 100%;
+              object-fit: cover;
+              border-radius: 14px;
+              filter: none;
+              transition: all 0.4s ease;
             }
             .brand-card:hover .brand-logo-wrap {
               opacity: 1;
-              color: var(--text-primary);
+              box-shadow: 0 8px 30px rgba(201,151,59,0.25);
             }
-            .brand-sub {
-              font-size: 0.58rem;
+            .brand-card:hover .brand-logo-wrap img {
+              filter: none;
+              transform: scale(1.05);
+            }
+            .brand-name {
+              font-size: 0.6rem;
               font-weight: 700;
               text-transform: uppercase;
-              letter-spacing: 0.2em;
+              letter-spacing: 0.18em;
               color: var(--text-muted);
+              text-align: center;
               transition: color 0.3s;
             }
-            .brand-card:hover .brand-sub { color: var(--gold); }
-
-            [data-theme="light"] .brand-card {
-              background: #ffffff;
-              border-color: rgba(0,0,0,0.07);
-              box-shadow: 0 2px 12px rgba(0,0,0,0.05);
-            }
-            [data-theme="light"] .brand-card:hover {
-              border-color: rgba(184,133,42,0.3);
-              box-shadow: 0 8px 28px rgba(184,133,42,0.1);
-            }
-            [data-theme="light"] .brand-logo-wrap { color: #1a1814; }
-            [data-theme="light"] .brand-card:hover .brand-logo-wrap { color: #0d0c0a; }
+            .brand-card:hover .brand-name { color: var(--gold); }
           `}</style>
         </section>
 
@@ -827,21 +799,19 @@ export default function HomePage() {
         ══════════════════════════════════════ */}
         <section style={{ background: "var(--bg-secondary)", padding: "100px 0" }}>
           <div className="sal-container">
-            <div className="reveal" style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 48, flexWrap: "wrap", gap: 16 }}>
-              <div>
-                <span className="sal-eyebrow">Gallery</span>
-                <h2 className="sal-h2">Explore Our <span className="text-gold">Gallery</span></h2>
-              </div>
-              <Link href={ROUTES.GALLERY} className="sal-btn sal-btn-ghost" style={{ padding: "10px 20px", fontSize: "0.78rem" }}>
-                Full Gallery <ChevronRight style={{ width: 14, height: 14 }} />
-              </Link>
+            <div className="reveal" style={{ textAlign: "center", marginBottom: 56 }}>
+              <span className="sal-eyebrow">Gallery</span>
+              <h2 className="sal-h2" style={{ marginBottom: 14 }}>Explore Our <span className="text-gold">Gallery</span></h2>
+              <p style={{ color: "var(--text-secondary)", fontSize: "0.92rem", maxWidth: 480, margin: "0 auto" }}>
+                Real transformations from real clients — every cut, color, and style captured here.
+              </p>
             </div>
 
             {/* 3-column masonry-style grid */}
-            <div className="reveal-stagger" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
-              {/* Large featured image */}
-              <div className="gallery-img-wrap reveal-child" style={{ gridRow: "1 / 3", aspectRatio: "auto" }}>
-                <div style={{ position: "relative", height: "100%", minHeight: 360 }}>
+            <div className="reveal-stagger" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gridTemplateRows: "200px 200px", gap: 14 }}>
+              {/* Large featured image — spans both rows */}
+              <div className="gallery-img-wrap reveal-child" style={{ gridRow: "1 / 3", gridColumn: "1 / 2" }}>
+                <div style={{ position: "relative", width: "100%", height: "100%" }}>
                   <Image
                     src={galleryImages[0]}
                     alt="Gallery 1"
@@ -854,15 +824,20 @@ export default function HomePage() {
                   </div>
                 </div>
               </div>
-              {/* Regular images */}
+              {/* Regular images — fill columns 2 & 3, rows 1 & 2 */}
               {galleryImages.slice(1).map((src, i) => (
-                <div key={i} className="gallery-img-wrap reveal-child" style={{ aspectRatio: "4/3" }}>
-                  <div style={{ position: "relative", height: 200 }}>
-                    <Image src={src} alt={`Gallery ${i + 2}`} fill className="object-cover" sizes="25vw" />
-                    <div className="gallery-overlay" />
-                  </div>
+                <div key={i} className="gallery-img-wrap reveal-child" style={{ position: "relative" }}>
+                  <Image src={src} alt={`Gallery ${i + 2}`} fill className="object-cover" sizes="25vw" />
+                  <div className="gallery-overlay" />
                 </div>
               ))}
+            </div>
+
+            <div style={{ textAlign: "center", marginTop: 44 }}>
+              <Link href={ROUTES.GALLERY} className="sal-btn sal-btn-outline">
+                View Full Gallery
+                <ChevronRight style={{ width: 16, height: 16 }} />
+              </Link>
             </div>
           </div>
         </section>
@@ -994,58 +969,7 @@ export default function HomePage() {
         {/* ══════════════════════════════════════
             BOOK CTA BANNER
         ══════════════════════════════════════ */}
-        <section className="cta-banner-bg" style={{
-          background: "linear-gradient(135deg, #0d0c0a 0%, #1c1508 40%, #0d0c0a 100%)",
-          padding: "100px 0", position: "relative", overflow: "hidden"
-        }}>
-          {/* Glow */}
-          <div style={{
-            position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)",
-            width: 700, height: 400,
-            background: "radial-gradient(ellipse, rgba(201,151,59,0.09) 0%, transparent 65%)",
-            pointerEvents: "none"
-          }} />
-
-          <div className="sal-container" style={{ position: "relative", textAlign: "center" }}>
-            {/* Icon */}
-            <div className="anim-pulse reveal-bounce" style={{
-              width: 70, height: 70, borderRadius: 20,
-              background: "var(--grad-gold-btn)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              margin: "0 auto 28px",
-              boxShadow: "0 12px 40px rgba(201,151,59,0.4)"
-            }}>
-              <Scissors style={{ width: 30, height: 30, color: "#0d0c0a", transform: "rotate(45deg)" }} />
-            </div>
-
-            <h2 className="sal-h2 reveal" style={{ marginBottom: 16, fontSize: "clamp(2rem, 4vw, 3rem)" }}>
-              Book Your Appointment<br />
-              <span className="text-gold">Today</span>
-            </h2>
-            <p className="reveal" style={{ color: "var(--text-secondary)", fontSize: "1rem", maxWidth: 420, margin: "0 auto 40px", lineHeight: 1.8 }}>
-              Choose your service, pick your stylist, and select a time that works for you. Takes less than 2 minutes.
-            </p>
-
-            <div className="reveal" style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap", marginBottom: 28 }}>
-              <Link href={ROUTES.BOOK} className="sal-btn sal-btn-gold" style={{ padding: "15px 36px", fontSize: "0.88rem" }}>
-                <Scissors style={{ width: 17, height: 17 }} />
-                Book Now — Free
-              </Link>
-              <a href={`tel:${APP_PHONE}`} className="sal-btn sal-btn-ghost" style={{ padding: "14px 36px", fontSize: "0.88rem" }}>
-                <Phone style={{ width: 16, height: 16 }} />
-                Call Us
-              </a>
-            </div>
-
-            <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, flexWrap: "wrap" }}>
-              <MapPin style={{ width: 13, height: 13, color: "var(--gold)" }} />
-              F-7 Markaz, Islamabad
-              <span style={{ color: "var(--border)" }}>·</span>
-              <Clock style={{ width: 13, height: 13, color: "var(--gold)" }} />
-              Mon–Sat 9AM–9PM, Sun 10AM–7PM
-            </p>
-          </div>
-        </section>
+        <CtaBanner />
 
       </main>
       <Footer />

@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { CheckCircle, AlertCircle, X, Info } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { TOAST_CONFIG } from "@/constants";
 
 export type ToastType = "success" | "error" | "info";
@@ -19,36 +18,52 @@ interface ToastProps {
   onRemove: (id: string) => void;
 }
 
-// ── Per-type visual config — uses CSS variables / Tailwind tokens, no raw hex ──
 const TOAST_META: Record<ToastType, {
   icon: React.ReactNode;
-  borderClass: string;    // left accent border colour
-  borderColorClass: string; // container border
-  bgClass: string;        // container background tint
+  accent: string;
+  glow: string;
+  progress: string;
+  bg: string;
+  border: string;
 }> = {
   success: {
-    icon:             <CheckCircle className="w-[18px] h-[18px] shrink-0 text-emerald-400" />,
-    borderClass:      "border-l-emerald-400",
-    borderColorClass: "border-emerald-500/20",
-    bgClass:          "bg-emerald-500/[0.06]",
+    icon:     <CheckCircle style={{ width: 20, height: 20, flexShrink: 0, color: "#4ade80" }} />,
+    accent:   "#4ade80",
+    glow:     "rgba(74,222,128,0.12)",
+    progress: "linear-gradient(90deg, #4ade80, #22c55e)",
+    bg:       "rgba(74,222,128,0.06)",
+    border:   "rgba(74,222,128,0.2)",
   },
   error: {
-    icon:             <AlertCircle className="w-[18px] h-[18px] shrink-0 text-red-400" />,
-    borderClass:      "border-l-red-400",
-    borderColorClass: "border-red-500/20",
-    bgClass:          "bg-red-500/[0.06]",
+    icon:     <AlertCircle style={{ width: 20, height: 20, flexShrink: 0, color: "#f87171" }} />,
+    accent:   "#f87171",
+    glow:     "rgba(248,113,113,0.12)",
+    progress: "linear-gradient(90deg, #f87171, #ef4444)",
+    bg:       "rgba(248,113,113,0.06)",
+    border:   "rgba(248,113,113,0.2)",
   },
   info: {
-    icon:             <Info className="w-[18px] h-[18px] shrink-0 text-blue-400" />,
-    borderClass:      "border-l-blue-400",
-    borderColorClass: "border-blue-500/20",
-    bgClass:          "bg-blue-500/[0.06]",
+    icon:     <Info style={{ width: 20, height: 20, flexShrink: 0, color: "#60a5fa" }} />,
+    accent:   "#60a5fa",
+    glow:     "rgba(96,165,250,0.12)",
+    progress: "linear-gradient(90deg, #60a5fa, #3b82f6)",
+    bg:       "rgba(96,165,250,0.06)",
+    border:   "rgba(96,165,250,0.2)",
   },
 };
 
 export function ToastContainer({ toasts, onRemove }: ToastProps) {
   return (
-    <div className="fixed top-6 right-6 z-[9999] flex flex-col gap-3 pointer-events-none">
+    <div style={{
+      position: "fixed",
+      top: 24,
+      right: 24,
+      zIndex: 9999,
+      display: "flex",
+      flexDirection: "column",
+      gap: 12,
+      pointerEvents: "none",
+    }}>
       {toasts.map((t) => (
         <ToastItem key={t.id} toast={t} onRemove={onRemove} />
       ))}
@@ -58,54 +73,145 @@ export function ToastContainer({ toasts, onRemove }: ToastProps) {
 
 function ToastItem({ toast, onRemove }: { toast: ToastMessage; onRemove: (id: string) => void }) {
   const [visible, setVisible] = useState(false);
+  const [progress, setProgress] = useState(100);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const meta = TOAST_META[toast.type];
-
-  useEffect(() => {
-    const enter   = setTimeout(() => setVisible(true), 10);
-    const dismiss = setTimeout(() => {
-      setVisible(false);
-      setTimeout(() => onRemove(toast.id), TOAST_CONFIG.ANIMATE_MS);
-    }, TOAST_CONFIG.DURATION_MS);
-    return () => { clearTimeout(enter); clearTimeout(dismiss); };
-  }, [toast.id, onRemove]);
 
   const dismiss = () => {
     setVisible(false);
+    if (intervalRef.current) clearInterval(intervalRef.current);
     setTimeout(() => onRemove(toast.id), TOAST_CONFIG.ANIMATE_MS);
   };
 
+  useEffect(() => {
+    const enter = setTimeout(() => setVisible(true), 10);
+
+    // progress bar countdown
+    const step = 100 / (TOAST_CONFIG.DURATION_MS / 30);
+    intervalRef.current = setInterval(() => {
+      setProgress((p) => {
+        if (p <= 0) { clearInterval(intervalRef.current!); return 0; }
+        return p - step;
+      });
+    }, 30);
+
+    const autoDismiss = setTimeout(dismiss, TOAST_CONFIG.DURATION_MS);
+
+    return () => {
+      clearTimeout(enter);
+      clearTimeout(autoDismiss);
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [toast.id]);
+
   return (
     <div
-      className={cn(
-        "pointer-events-auto flex items-start gap-3 p-[14px_16px] rounded-[14px]",
-        "min-w-[300px] max-w-[380px] backdrop-blur-[16px]",
-        "border border-l-[3px] shadow-[0_8px_32px_rgba(0,0,0,0.35)]",
-        "[background:var(--bg-secondary,#1a1916)]",
-        meta.bgClass,
-        meta.borderClass,
-        meta.borderColorClass,
-        "transition-[transform,opacity] duration-[350ms]",
-        visible ? "translate-x-0 opacity-100" : "translate-x-[120px] opacity-0",
-      )}
+      style={{
+        pointerEvents: "auto",
+        minWidth: 320,
+        maxWidth: 400,
+        borderRadius: 16,
+        overflow: "hidden",
+        background: `var(--bg-secondary, #1a1916)`,
+        border: `1px solid ${meta.border}`,
+        borderLeft: `3px solid ${meta.accent}`,
+        boxShadow: `0 8px 40px rgba(0,0,0,0.35), 0 0 0 1px ${meta.border}, inset 0 0 40px ${meta.glow}`,
+        backdropFilter: "blur(20px)",
+        transition: `transform ${TOAST_CONFIG.ANIMATE_MS}ms cubic-bezier(0.34,1.56,0.64,1), opacity ${TOAST_CONFIG.ANIMATE_MS}ms ease`,
+        transform: visible ? "translateX(0) scale(1)" : "translateX(110%) scale(0.95)",
+        opacity: visible ? 1 : 0,
+      }}
     >
-      {meta.icon}
+      {/* Main content */}
+      <div style={{
+        display: "flex",
+        alignItems: "flex-start",
+        gap: 12,
+        padding: "14px 16px 12px",
+      }}>
+        {/* Icon with glow bg */}
+        <div style={{
+          width: 36,
+          height: 36,
+          borderRadius: 10,
+          background: meta.bg,
+          border: `1px solid ${meta.border}`,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
+        }}>
+          {meta.icon}
+        </div>
 
-      <div className="flex-1 min-w-0">
-        <p className="text-[0.85rem] font-bold text-white leading-snug">{toast.title}</p>
-        {toast.message && (
-          <p className="text-[0.76rem] text-[var(--text-muted)] mt-1 leading-[1.4]">
-            {toast.message}
+        {/* Text */}
+        <div style={{ flex: 1, minWidth: 0, paddingTop: 2 }}>
+          <p style={{
+            fontSize: "0.875rem",
+            fontWeight: 700,
+            color: "var(--text-primary)",
+            lineHeight: 1.3,
+            marginBottom: toast.message ? 4 : 0,
+          }}>
+            {toast.title}
           </p>
-        )}
+          {toast.message && (
+            <p style={{
+              fontSize: "0.775rem",
+              color: "var(--text-muted)",
+              lineHeight: 1.5,
+            }}>
+              {toast.message}
+            </p>
+          )}
+        </div>
+
+        {/* Close button */}
+        <button
+          onClick={dismiss}
+          aria-label="Dismiss"
+          style={{
+            flexShrink: 0,
+            width: 24,
+            height: 24,
+            borderRadius: 6,
+            background: "transparent",
+            border: "none",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "var(--text-muted)",
+            transition: "background 0.15s, color 0.15s",
+            marginTop: 2,
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "rgba(255,255,255,0.08)";
+            e.currentTarget.style.color = "var(--text-primary)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "transparent";
+            e.currentTarget.style.color = "var(--text-muted)";
+          }}
+        >
+          <X style={{ width: 14, height: 14 }} />
+        </button>
       </div>
 
-      <button
-        onClick={dismiss}
-        aria-label="Dismiss notification"
-        className="shrink-0 flex items-center p-0.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors bg-transparent border-none cursor-pointer"
-      >
-        <X className="w-3.5 h-3.5" />
-      </button>
+      {/* Progress bar */}
+      <div style={{
+        height: 3,
+        background: "rgba(255,255,255,0.05)",
+      }}>
+        <div style={{
+          height: "100%",
+          width: `${progress}%`,
+          background: meta.progress,
+          transition: "width 30ms linear",
+          borderRadius: "0 2px 2px 0",
+        }} />
+      </div>
     </div>
   );
 }

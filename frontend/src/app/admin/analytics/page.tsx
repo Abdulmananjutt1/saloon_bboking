@@ -72,10 +72,7 @@ export default function AdminAnalyticsPage() {
 
       {/* Header */}
       <div style={{ marginBottom: 32 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-          <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(201,151,59,0.1)", border: "1px solid rgba(201,151,59,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <BarChart3 style={{ width: 18, height: 18, color: "var(--gold)" }} />
-          </div>
+        <div style={{ marginBottom: 8 }}>
           <h1 style={{ fontSize: "2.4rem", fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.02em", fontFamily: "var(--font-display), Georgia, serif" }}>
             Analytics
           </h1>
@@ -116,24 +113,24 @@ export default function AdminAnalyticsPage() {
       </div>
 
       {/* Chart + Status */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 20, marginBottom: 24 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 20, marginBottom: 24, marginTop: 16 }}>
 
         {/* Bar Chart */}
         <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-light)", borderRadius: 20, padding: "24px" }}>
           <p style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: 4 }}>Monthly Revenue</p>
-          <p style={{ fontSize: "0.74rem", color: "var(--text-muted)", marginBottom: 28 }}>Last 7 months — live from database</p>
+          <p style={{ fontSize: "0.74rem", color: "var(--text-muted)", marginBottom: 48 }}>Last 7 months — live from database</p>
 
           {loading ? (
-            <div style={{ height: 200, display: "flex", alignItems: "flex-end", gap: 12 }}>
+            <div style={{ height: 220, display: "flex", alignItems: "flex-end", gap: 12 }}>
               {[0.6, 0.8, 0.5, 0.9, 0.7, 1.0, 0.85].map((h, i) => (
                 <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
-                  <div style={{ ...skel("100%", Math.round(h * 150), 6) }} />
+                  <div style={{ ...skel("100%", Math.round(h * 160), 6) }} />
                   <div style={skel(24, 10, 3)} />
                 </div>
               ))}
             </div>
           ) : (
-            <div style={{ display: "flex", alignItems: "flex-end", gap: 12, height: 200, paddingBottom: 8 }}>
+            <div style={{ display: "flex", alignItems: "flex-end", gap: 12, height: 220, paddingBottom: 8 }}>
               {data!.monthlyData.map((d) => (
                 <div key={d.month} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
                   <p style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--gold-light)", whiteSpace: "nowrap" }}>
@@ -141,7 +138,7 @@ export default function AdminAnalyticsPage() {
                   </p>
                   <div style={{
                     width: "100%",
-                    height: `${Math.max((d.revenue / maxRevenue) * 150, d.revenue > 0 ? 8 : 4)}px`,
+                    height: `${Math.max((d.revenue / maxRevenue) * 160, d.revenue > 0 ? 8 : 4)}px`,
                     background: d.revenue > 0
                       ? "linear-gradient(to top, rgba(201,151,59,0.9), rgba(224,185,106,0.7))"
                       : "var(--border-light)",
@@ -202,13 +199,6 @@ export default function AdminAnalyticsPage() {
             </div>
           )}
 
-          {/* Total */}
-          <div style={{ marginTop: 24, paddingTop: 18, borderTop: "1px solid var(--border-light)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: "0.74rem", color: "var(--text-muted)" }}>Total Bookings</span>
-            <span style={{ fontSize: "1rem", fontWeight: 800, color: "var(--gold)" }}>
-              {loading ? "—" : data!.statusBreakdown.total}
-            </span>
-          </div>
         </div>
       </div>
 

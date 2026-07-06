@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { User, Store, Bell, Palette, Shield, Save } from "lucide-react";
+import { User, Store, Bell, Palette, Shield, Save, Clock } from "lucide-react";
+import { PushNotificationToggle } from "@/components/PushNotificationToggle";
+import { WorkingHoursEditor } from "@/components/admin/settings/WorkingHoursEditor";
 
 export default function AdminSettingsPage() {
   const [activeTab, setActiveTab] = useState("general");
@@ -46,6 +48,7 @@ export default function AdminSettingsPage() {
         }}>
           <TabButton icon={<Store />} label="Salon Details" active={activeTab === "general"} onClick={() => setActiveTab("general")} />
           <TabButton icon={<User />} label="Admin Profile" active={activeTab === "profile"} onClick={() => setActiveTab("profile")} />
+          <TabButton icon={<Clock />} label="Availability" active={activeTab === "availability"} onClick={() => setActiveTab("availability")} />
           <TabButton icon={<Bell />} label="Notifications" active={activeTab === "notifications"} onClick={() => setActiveTab("notifications")} />
           <TabButton icon={<Palette />} label="Appearance" active={activeTab === "appearance"} onClick={() => setActiveTab("appearance")} />
           <TabButton icon={<Shield />} label="Security" active={activeTab === "security"} onClick={() => setActiveTab("security")} />
@@ -94,13 +97,54 @@ export default function AdminSettingsPage() {
             </div>
           )}
 
-          {activeTab === "notifications" && (
+          {activeTab === "availability" && (
             <div style={{ animation: "fadeIn 0.2s" }}>
-              <h2 style={{ fontSize: "1.2rem", fontWeight: 700, marginBottom: 24, paddingBottom: 16, borderBottom: "1px solid var(--border-light)" }}>Alert Preferences</h2>
-              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                <ToggleRow label="New Booking Alerts" description="Receive a ding when a client makes a new booking." defaultChecked={true} />
-                <ToggleRow label="Chat Notifications" description="Show badge when a client sends a message in support chat." defaultChecked={true} />
-                <ToggleRow label="Daily Summary Report" description="Email me a summary of total revenue and appointments every evening." defaultChecked={false} />
+              <h2 style={{ fontSize: "1.2rem", fontWeight: 700, marginBottom: 8, paddingBottom: 16, borderBottom: "1px solid var(--border-light)" }}>
+                Working Hours
+              </h2>
+              <WorkingHoursEditor />
+            </div>
+          )}
+
+          {activeTab === "notifications" && (            <div style={{ animation: "fadeIn 0.2s" }}>
+              <h2 style={{ fontSize: "1.2rem", fontWeight: 700, marginBottom: 8, paddingBottom: 16, borderBottom: "1px solid var(--border-light)" }}>Alert Preferences</h2>
+
+              {/* Push Notifications */}
+              <div style={{ marginBottom: 28 }}>
+                <p style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 12, marginTop: 20 }}>
+                  Push Notifications
+                </p>
+                <div style={{
+                  padding: "20px 20px",
+                  borderRadius: 12,
+                  background: "rgba(201,151,59,0.04)",
+                  border: "1px solid rgba(201,151,59,0.15)",
+                  display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16
+                }}>
+                  <div>
+                    <p style={{ fontSize: "0.9rem", fontWeight: 600, color: "var(--text-primary)", marginBottom: 4 }}>
+                      Browser Push Notifications
+                    </p>
+                    <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", lineHeight: 1.5 }}>
+                      Get instant alerts for new bookings, messages, and updates directly in your browser.
+                    </p>
+                  </div>
+                  <div style={{ flexShrink: 0 }}>
+                    <PushNotificationToggle />
+                  </div>
+                </div>
+              </div>
+
+              {/* In-app toggles */}
+              <div>
+                <p style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 12 }}>
+                  In-App Alerts
+                </p>
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  <ToggleRow label="New Booking Alerts" description="Receive a notification when a client makes a new booking." defaultChecked={true} />
+                  <ToggleRow label="Chat Notifications" description="Show badge when a client sends a message in support chat." defaultChecked={true} />
+                  <ToggleRow label="Daily Summary Report" description="Email me a summary of total revenue and appointments every evening." defaultChecked={false} />
+                </div>
               </div>
             </div>
           )}

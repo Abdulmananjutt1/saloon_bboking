@@ -6,8 +6,13 @@ import Footer from "@/components/layout/Footer";
 import { ROUTES, SERVICE_CATEGORIES } from "@/constants";
 import { SERVICES } from "@/lib/data/salon";
 import { formatPrice, formatDuration } from "@/lib/utils";
-import { Clock, Scissors, Sparkles, Calendar, ArrowRight } from "lucide-react";
+import { Clock, Scissors, Sparkles, Calendar, ArrowRight, User, Palette, Heart, Star, Crown, Feather, Wind, type LucideIcon } from "lucide-react";
 import type { ServiceCategory } from "@/types";
+import CtaBanner from "@/components/CtaBanner";
+
+const ICON_MAP: Record<string, LucideIcon> = {
+  Scissors, User, Palette, Sparkles, Heart, Star, Crown, Feather, Wind,
+};
 
 export const metadata: Metadata = {
   title: "Services — Glamour Studio",
@@ -55,7 +60,7 @@ export default async function ServicesPage({ searchParams }: Props) {
 
           {/* Content */}
           <div className="sal-container" style={{ position: "relative", paddingTop: 120, paddingBottom: 80, width: "100%" }}>
-            <div style={{ maxWidth: 700, textAlign: "center", margin: "0 auto" }}>
+            <div className="hero-content" style={{ maxWidth: 700, textAlign: "center", margin: "0 auto" }}>
 
               {/* Top badge */}
               <div className="sal-glass-gold anim-up" style={{
@@ -146,38 +151,41 @@ export default async function ServicesPage({ searchParams }: Props) {
                 <Sparkles style={{ width: 12, height: 12 }} />
                 All Services
               </Link>
-              {SERVICE_CATEGORIES.map((c) => (
-                <Link
-                  key={c.value}
-                  href={`${ROUTES.SERVICES}?cat=${c.value}`}
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 6,
-                    padding: "8px 16px",
-                    borderRadius: 8,
-                    fontSize: "0.82rem",
-                    fontWeight: 600,
-                    textDecoration: "none",
-                    transition: "all 0.2s ease",
-                    ...(cat === c.value
-                      ? { 
-                          background: "var(--grad-gold-btn)", 
-                          color: "#0d0c0a",
-                          boxShadow: "0 4px 20px rgba(201,151,59,0.3)"
-                        }
-                      : { 
-                          background: "var(--bg-card)", 
-                          color: "var(--text-secondary)",
-                          border: "1px solid var(--border-light)"
-                        }
-                    )
-                  }}
-                >
-                  <span style={{ fontSize: "0.9rem" }}>{c.icon}</span>
-                  {c.label}
-                </Link>
-              ))}
+              {SERVICE_CATEGORIES.map((c) => {
+                const Icon = ICON_MAP[c.icon] ?? Sparkles;
+                return (
+                  <Link
+                    key={c.value}
+                    href={`${ROUTES.SERVICES}?cat=${c.value}`}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                      padding: "8px 16px",
+                      borderRadius: 8,
+                      fontSize: "0.82rem",
+                      fontWeight: 600,
+                      textDecoration: "none",
+                      transition: "all 0.2s ease",
+                      ...(cat === c.value
+                        ? { 
+                            background: "var(--grad-gold-btn)", 
+                            color: "#0d0c0a",
+                            boxShadow: "0 4px 20px rgba(201,151,59,0.3)"
+                          }
+                        : { 
+                            background: "var(--bg-card)", 
+                            color: "var(--text-secondary)",
+                            border: "1px solid var(--border-light)"
+                          }
+                      )
+                    }}
+                  >
+                    <Icon style={{ width: 13, height: 13 }} />
+                    {c.label}
+                  </Link>
+                );
+              })}
             </div>
 
             {/* Services count */}
@@ -294,69 +302,7 @@ export default async function ServicesPage({ searchParams }: Props) {
         {/* ══════════════════════════════════════
             CTA SECTION
         ══════════════════════════════════════ */}
-        <section className="cta-banner-bg" style={{
-          background: "linear-gradient(135deg, #0d0c0a 0%, #1c1508 40%, #0d0c0a 100%)",
-          padding: "100px 0", position: "relative", overflow: "hidden"
-        }}>
-          {/* Glow */}
-          <div style={{
-            position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)",
-            width: 700, height: 400,
-            background: "radial-gradient(ellipse, rgba(201,151,59,0.09) 0%, transparent 65%)",
-            pointerEvents: "none"
-          }} />
-
-          <div className="sal-container" style={{ position: "relative", textAlign: "center" }}>
-            {/* Icon */}
-            <div className="anim-pulse" style={{
-              width: 70, height: 70, borderRadius: 20,
-              background: "var(--grad-gold-btn)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              margin: "0 auto 28px",
-              boxShadow: "0 12px 40px rgba(201,151,59,0.4)"
-            }}>
-              <Scissors style={{ width: 30, height: 30, color: "#0d0c0a", transform: "rotate(45deg)" }} />
-            </div>
-
-            <h2 className="sal-h2" style={{ marginBottom: 16, fontSize: "clamp(2rem, 4vw, 3rem)" }}>
-              Book Your Appointment<br />
-              <span className="text-gold">Today</span>
-            </h2>
-            <p style={{ color: "var(--text-secondary)", fontSize: "1rem", maxWidth: 420, margin: "0 auto 40px", lineHeight: 1.8 }}>
-              Choose your service, pick your stylist, and select a time that works for you. Takes less than 2 minutes.
-            </p>
-
-            <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap", marginBottom: 28 }}>
-              <Link href={ROUTES.BOOK} className="sal-btn sal-btn-gold" style={{ padding: "15px 36px", fontSize: "0.88rem" }}>
-                <Scissors style={{ width: 17, height: 17 }} />
-                Book Now — Free
-              </Link>
-              <Link href={ROUTES.SERVICES} className="sal-btn sal-btn-ghost" style={{ padding: "14px 36px", fontSize: "0.88rem" }}>
-                <ArrowRight style={{ width: 16, height: 16 }} />
-                Browse More Services
-              </Link>
-            </div>
-
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 32, flexWrap: "wrap", marginTop: 40 }}>
-              <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: "2rem", fontWeight: 900, color: "var(--gold-light)", marginBottom: 4 }}>4.9★</div>
-                <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.1em" }}>Avg. Rating</div>
-              </div>
-              <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: "2rem", fontWeight: 900, color: "var(--gold-light)", marginBottom: 4 }}>50+</div>
-                <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.1em" }}>Services</div>
-              </div>
-              <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: "2rem", fontWeight: 900, color: "var(--gold-light)", marginBottom: 4 }}>8.5K+</div>
-                <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.1em" }}>Happy Clients</div>
-              </div>
-              <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: "2rem", fontWeight: 900, color: "var(--gold-light)", marginBottom: 4 }}>15+</div>
-                <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.1em" }}>Expert Stylists</div>
-              </div>
-            </div>
-          </div>
-        </section>
+        <CtaBanner />
 
       </main>
       <Footer />

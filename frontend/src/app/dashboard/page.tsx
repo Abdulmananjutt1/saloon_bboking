@@ -6,14 +6,13 @@ import {
   Scissors, CalendarDays,
   MessageSquare, Settings, LogOut, Clock3,
   ChevronRight, ChevronUp, Star, Send, Plus, Wifi, WifiOff,
-  User, Mail, Phone, ShieldAlert
+  User, Mail, Phone, ShieldAlert, Pencil, Check, X
 } from "lucide-react";
 
 import { ROUTES, APP_NAME } from "@/constants";
 import { useClientDashboard } from "@/hooks/useClientDashboard";
 import { ToastContainer, useToast } from "@/components/ui/Toast";
 import { popSessionToast } from "@/lib/session";
-import { PushNotificationToggle } from "@/components/PushNotificationToggle";
 
 export default function ClientDashboard() {
   const [activeTab, setActiveTab] = useState<"overview" | "appointments" | "chat" | "settings">("overview");
@@ -35,8 +34,20 @@ export default function ClientDashboard() {
     chatMessages, newMessage, setNewMessage,
     wsStatus, sendMessage, chatEndRef,
     unreadCount, markChatRead, markChatClosed,
-    logout,
+    logout, updateProfile,
   } = useClientDashboard();
+
+  // Profile edit state
+  const [editMode, setEditMode] = useState(false);
+  const [profileForm, setProfileForm] = useState({ name: "", phone: "" });
+  const [profileErrors, setProfileErrors] = useState<{ name?: string; phone?: string; general?: string }>({});
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileSaved, setProfileSaved] = useState(false);
+
+  // Sync form when user loads
+  useEffect(() => {
+    if (user) setProfileForm({ name: user.name, phone: user.phone ?? "" });
+  }, [user]);
 
   // Sync tab from URL query param on mount
   useEffect(() => {
@@ -206,11 +217,6 @@ export default function ClientDashboard() {
               </div>
             </>
           )}
-
-          {/* Push notification toggle */}
-          <div style={{ padding: "0 4px 10px 4px" }}>
-            <PushNotificationToggle className="w-full justify-center" />
-          </div>
 
           {/* Profile trigger button */}
           <button
@@ -773,82 +779,126 @@ export default function ClientDashboard() {
             }}>
               <div style={{
                 padding: "14px 22px", borderBottom: "1px solid var(--border-light)",
-                display: "flex", alignItems: "center", gap: 10
+                display: "flex", alignItems: "center", justifyContent: "space-between"
               }}>
-                <div style={{
-                  width: 28, height: 28, borderRadius: 8,
-                  background: "rgba(201,151,59,0.1)", border: "1px solid rgba(201,151,59,0.2)",
-                  display: "flex", alignItems: "center", justifyContent: "center"
-                }}>
-                  <User style={{ width: 12, height: 12, color: "var(--gold)" }} />
-                </div>
-                <h3 style={{ fontSize: "0.84rem", fontWeight: 700, color: "var(--text-primary)" }}>
-                  Personal Information
-                </h3>
-              </div>
-
-              {[
-                { label: "Full Name",     value: user.name,  Icon: User  },
-                { label: "Email Address", value: user.email, Icon: Mail  },
-                { label: "Phone Number",  value: user.phone, Icon: Phone },
-              ].map(({ label, value, Icon }, i, arr) => (
-                <div key={label} style={{
-                  display: "flex", alignItems: "center", gap: 16,
-                  padding: "15px 22px",
-                  borderBottom: i < arr.length - 1 ? "1px solid var(--border-light)" : "none"
-                }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <div style={{
-                    width: 34, height: 34, borderRadius: 9, flexShrink: 0,
-                    background: "var(--bg-secondary)", border: "1px solid var(--border-light)",
+                    width: 28, height: 28, borderRadius: 8,
+                    background: "rgba(201,151,59,0.1)", border: "1px solid rgba(201,151,59,0.2)",
                     display: "flex", alignItems: "center", justifyContent: "center"
                   }}>
-                    <Icon style={{ width: 13, height: 13, color: "var(--text-muted)" }} />
+                    <User style={{ width: 12, height: 12, color: "var(--gold)" }} />
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <p style={{ fontSize: "0.62rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.15em", color: "var(--text-muted)", marginBottom: 3 }}>
-                      {label}
-                    </p>
-                    <p style={{ fontSize: "0.88rem", fontWeight: 600, color: "var(--text-primary)" }}>
-                      {value || <span style={{ color: "var(--text-muted)", fontStyle: "italic", fontWeight: 400 }}>Not provided</span>}
-                    </p>
-                  </div>
-                  <span style={{
-                    fontSize: "0.58rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em",
-                    padding: "3px 8px", borderRadius: 99,
-                    background: "var(--bg-secondary)", border: "1px solid var(--border-light)",
-                    color: "var(--text-muted)", flexShrink: 0
-                  }}>
-                    Read only
-                  </span>
+                  <h3 style={{ fontSize: "0.84rem", fontWeight: 700, color: "var(--text-primary)" }}>
+                    Personal Information
+                  </h3>
                 </div>
-              ))}
-            </div>
-
-            {/* ── Info notice ── */}
-            <div style={{
-              padding: "15px 18px", borderRadius: 14,
-              background: "rgba(201,151,59,0.05)",
-              border: "1px solid rgba(201,151,59,0.18)",
-              display: "flex", gap: 13, alignItems: "flex-start"
-            }}>
-              <div style={{
-                width: 30, height: 30, borderRadius: 8, flexShrink: 0,
-                background: "rgba(201,151,59,0.1)", border: "1px solid rgba(201,151,59,0.22)",
-                display: "flex", alignItems: "center", justifyContent: "center", marginTop: 1
-              }}>
-                <ShieldAlert style={{ width: 13, height: 13, color: "var(--gold)" }} />
+                {!editMode ? (
+                  <button
+                    onClick={() => { setEditMode(true); setProfileSaved(false); setProfileErrors({}); }}
+                    style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 14px", borderRadius: 8, cursor: "pointer", background: "rgba(201,151,59,0.08)", border: "1px solid rgba(201,151,59,0.2)", color: "var(--gold)", fontSize: "0.74rem", fontWeight: 700 }}
+                  >
+                    <Pencil style={{ width: 11, height: 11 }} /> Edit
+                  </button>
+                ) : (
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button
+                      onClick={() => { setEditMode(false); setProfileErrors({}); if (user) setProfileForm({ name: user.name, phone: user.phone ?? "" }); }}
+                      style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 12px", borderRadius: 8, cursor: "pointer", background: "var(--bg-secondary)", border: "1px solid var(--border-light)", color: "var(--text-muted)", fontSize: "0.74rem", fontWeight: 700 }}
+                    >
+                      <X style={{ width: 11, height: 11 }} /> Cancel
+                    </button>
+                    <button
+                      onClick={async () => {
+                        setProfileErrors({});
+                        setProfileSaving(true);
+                        const res = await updateProfile(profileForm.name, profileForm.phone);
+                        setProfileSaving(false);
+                        if (res.success) {
+                          setEditMode(false);
+                          setProfileSaved(true);
+                          toast("success", "Profile Updated", "Your information has been saved.");
+                          setTimeout(() => setProfileSaved(false), 3000);
+                        } else if (res.errors) {
+                          setProfileErrors(res.errors);
+                        } else {
+                          setProfileErrors({ general: res.error ?? "Something went wrong." });
+                        }
+                      }}
+                      disabled={profileSaving}
+                      style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 14px", borderRadius: 8, cursor: profileSaving ? "not-allowed" : "pointer", background: "var(--grad-gold-btn)", border: "none", color: "#0d0c0a", fontSize: "0.74rem", fontWeight: 700, opacity: profileSaving ? 0.7 : 1 }}
+                    >
+                      {profileSaving
+                        ? <><span style={{ width: 10, height: 10, borderRadius: "50%", border: "2px solid rgba(13,12,10,0.3)", borderTopColor: "#0d0c0a", animation: "spin 0.7s linear infinite", display: "inline-block" }} /> Saving…</>
+                        : <><Check style={{ width: 11, height: 11 }} /> Save</>
+                      }
+                    </button>
+                  </div>
+                )}
               </div>
-              <div>
-                <p style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--gold)", marginBottom: 4 }}>
-                  Want to update your details?
-                </p>
-                <p style={{ fontSize: "0.76rem", color: "var(--text-secondary)", lineHeight: 1.65 }}>
-                  To change your registered phone number or email, contact our support team at{" "}
-                  <a href="mailto:hello@glamourstudio.pk" style={{ color: "var(--gold-light)", fontWeight: 600, textDecoration: "none" }}>
-                    hello@glamourstudio.pk
-                  </a>{" "}
-                  for identity verification.
-                </p>
+
+              {profileErrors.general && (
+                <div style={{ margin: "12px 22px 0", padding: "10px 14px", borderRadius: 10, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", fontSize: "0.78rem", color: "#f87171" }}>
+                  {profileErrors.general}
+                </div>
+              )}
+
+              {profileSaved && !editMode && (
+                <div style={{ margin: "12px 22px 0", padding: "10px 14px", borderRadius: 10, background: "rgba(52,211,153,0.08)", border: "1px solid rgba(52,211,153,0.2)", fontSize: "0.78rem", color: "#34d399", display: "flex", alignItems: "center", gap: 8 }}>
+                  <Check style={{ width: 13, height: 13 }} /> Profile updated successfully.
+                </div>
+              )}
+
+              {/* Name */}
+              <div style={{ display: "flex", alignItems: "center", gap: 16, padding: "15px 22px", borderBottom: "1px solid var(--border-light)" }}>
+                <div style={{ width: 34, height: 34, borderRadius: 9, flexShrink: 0, background: "var(--bg-secondary)", border: "1px solid var(--border-light)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <User style={{ width: 13, height: 13, color: "var(--text-muted)" }} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontSize: "0.62rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.15em", color: "var(--text-muted)", marginBottom: 5 }}>Full Name</p>
+                  {editMode ? (
+                    <>
+                      <input value={profileForm.name} onChange={(e) => setProfileForm((f) => ({ ...f, name: e.target.value }))} style={{ width: "100%", background: "var(--bg-secondary)", border: `1.5px solid ${profileErrors.name ? "#f87171" : "rgba(201,151,59,0.35)"}`, borderRadius: 9, padding: "8px 12px", fontSize: "0.86rem", color: "var(--text-primary)", outline: "none" }} />
+                      {profileErrors.name && <p style={{ fontSize: "0.7rem", color: "#f87171", marginTop: 4 }}>{profileErrors.name}</p>}
+                    </>
+                  ) : (
+                    <p style={{ fontSize: "0.88rem", fontWeight: 600, color: "var(--text-primary)" }}>{user?.name}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Email — always read only */}
+              <div style={{ display: "flex", alignItems: "center", gap: 16, padding: "15px 22px", borderBottom: "1px solid var(--border-light)" }}>
+                <div style={{ width: 34, height: 34, borderRadius: 9, flexShrink: 0, background: "var(--bg-secondary)", border: "1px solid var(--border-light)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <Mail style={{ width: 13, height: 13, color: "var(--text-muted)" }} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontSize: "0.62rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.15em", color: "var(--text-muted)", marginBottom: 5 }}>Email Address</p>
+                  <p style={{ fontSize: "0.88rem", fontWeight: 600, color: "var(--text-primary)" }}>{user?.email}</p>
+                </div>
+                <span style={{ fontSize: "0.58rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", padding: "3px 8px", borderRadius: 99, background: "var(--bg-secondary)", border: "1px solid var(--border-light)", color: "var(--text-muted)", flexShrink: 0 }}>
+                  Read only
+                </span>
+              </div>
+
+              {/* Phone */}
+              <div style={{ display: "flex", alignItems: "center", gap: 16, padding: "15px 22px" }}>
+                <div style={{ width: 34, height: 34, borderRadius: 9, flexShrink: 0, background: "var(--bg-secondary)", border: "1px solid var(--border-light)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <Phone style={{ width: 13, height: 13, color: "var(--text-muted)" }} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontSize: "0.62rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.15em", color: "var(--text-muted)", marginBottom: 5 }}>Phone Number</p>
+                  {editMode ? (
+                    <>
+                      <input value={profileForm.phone} onChange={(e) => setProfileForm((f) => ({ ...f, phone: e.target.value }))} style={{ width: "100%", background: "var(--bg-secondary)", border: `1.5px solid ${profileErrors.phone ? "#f87171" : "rgba(201,151,59,0.35)"}`, borderRadius: 9, padding: "8px 12px", fontSize: "0.86rem", color: "var(--text-primary)", outline: "none" }} />
+                      {profileErrors.phone && <p style={{ fontSize: "0.7rem", color: "#f87171", marginTop: 4 }}>{profileErrors.phone}</p>}
+                    </>
+                  ) : (
+                    <p style={{ fontSize: "0.88rem", fontWeight: 600, color: "var(--text-primary)" }}>
+                      {user?.phone || <span style={{ color: "var(--text-muted)", fontStyle: "italic", fontWeight: 400 }}>Not provided</span>}
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
 

@@ -77,5 +77,10 @@ export function useBookings(statusFilter = "all") {
     cancelled: allBookings.filter((b) => b.status === "cancelled").length,
   };
 
-  return { bookings, loading, updating, statusCounts, updateStatus };
+  const refresh = () => {
+    fetchBookings(statusFilter);
+    fetchAll();
+  };
+
+  return { bookings, loading, updating, statusCounts, updateStatus, refresh };
 }

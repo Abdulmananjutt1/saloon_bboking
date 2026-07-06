@@ -6,12 +6,11 @@ import { usePathname, useRouter } from "next/navigation";
 import { ROUTES, APP_NAME } from "@/constants";
 import {
   Scissors, LayoutDashboard, CalendarDays,
-  Users, UserCheck, BarChart3, LogOut, Settings, MessageSquare, Bell, ChevronUp
+  Users, UserCheck, BarChart3, LogOut, Settings, MessageSquare, Bell, ChevronUp, Wallet
 } from "lucide-react";
 import { useAdminUnread } from "@/hooks/useAdminUnread";
 import { ToastContainer, useToast } from "@/components/ui/Toast";
 import { clearSession, pushSessionToast, popSessionToast } from "@/lib/session";
-import { PushNotificationToggle } from "@/components/PushNotificationToggle";
 
 const NAV = [
   { label: "Dashboard",     href: ROUTES.ADMIN,           icon: LayoutDashboard },
@@ -20,6 +19,7 @@ const NAV = [
   { label: "Stylists",      href: ROUTES.ADMIN_STYLISTS,  icon: Users },
   { label: "Clients",       href: ROUTES.ADMIN_CLIENTS,   icon: UserCheck },
   { label: "Analytics",     href: ROUTES.ADMIN_ANALYTICS, icon: BarChart3 },
+  { label: "Payroll",       href: ROUTES.ADMIN_PAYROLL,   icon: Wallet },
   { label: "Chat",          href: "/admin/chat",          icon: MessageSquare, showUnread: true },
   { label: "Notifications", href: "/admin/notifications", icon: Bell },
 ];
@@ -118,11 +118,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         {/* Bottom - Profile popover */}
         <div style={{ padding: "12px", borderTop: "1px solid var(--border-light)", position: "relative" }}>
-          
-          {/* Push notification toggle */}
-          <div style={{ padding: "0 4px 10px 4px" }}>
-            <PushNotificationToggle className="w-full justify-center" />
-          </div>
           
           {showProfileMenu && (
             <>

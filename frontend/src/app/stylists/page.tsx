@@ -4,7 +4,6 @@ import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import StarRating from "@/components/ui/StarRating";
-import { STYLISTS } from "@/lib/data/salon";
 import { ROUTES } from "@/constants";
 import { Scissors, Sparkles, Award, ArrowRight, Calendar } from "lucide-react";
 
@@ -13,9 +12,31 @@ export const metadata: Metadata = {
   description: "Meet Glamour Studio's expert team of stylists and beauty professionals.",
 };
 
-export default function StylistsPage() {
-  const available = STYLISTS.filter((s) => s.available);
-  const unavailable = STYLISTS.filter((s) => !s.available);
+interface Specialty { id: string; name: string; }
+interface StylistData {
+  id: string; name: string; role: string; avatar: string;
+  bio: string; experience: number; rating: number;
+  reviewCount: number; available: boolean;
+  specialties: Specialty[];
+}
+
+async function getStylists(): Promise<StylistData[]> {
+  try {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api"}/stylists`,
+      { cache: "no-store" }
+    );
+    const json = await res.json();
+    return json.success ? json.data : [];
+  } catch {
+    return [];
+  }
+}
+
+export default async function StylistsPage() {
+  const stylists = await getStylists();
+  const available   = stylists.filter((s) => s.available);
+  const unavailable = stylists.filter((s) => !s.available);
 
   return (
     <>
@@ -117,12 +138,13 @@ export default function StylistsPage() {
               display: "grid",
               gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
               gap: 28,
-              marginBottom: 60
+              marginBottom: 60,
+              alignItems: "stretch"
             }}>
               {available.map((stylist) => (
-                <div key={stylist.id} className="team-card" style={{ textAlign: "center" }}>
+                <div key={stylist.id} className="team-card" style={{ textAlign: "center", display: "flex", flexDirection: "column" }}>
                   {/* Photo */}
-                  <div style={{ position: "relative", height: 300, overflow: "hidden" }}>
+                  <div style={{ position: "relative", height: 300, overflow: "hidden", flexShrink: 0 }}>
                     <Image
                       src={stylist.avatar}
                       alt={stylist.name}
@@ -176,7 +198,7 @@ export default function StylistsPage() {
                   </div>
 
                   {/* Body */}
-                  <div style={{ padding: "20px 22px 26px" }}>
+                  <div style={{ padding: "20px 22px 26px", display: "flex", flexDirection: "column", flex: 1 }}>
                     {/* Rating */}
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 14 }}>
                       <StarRating rating={stylist.rating} size="sm" />
@@ -191,9 +213,9 @@ export default function StylistsPage() {
                     </p>
 
                     {/* Specialties */}
-                    <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 6, marginBottom: 20 }}>
+                    <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 6, marginBottom: 20, flex: 1, alignContent: "flex-start" }}>
                       {stylist.specialties.map((sp) => (
-                        <span key={sp} className="sal-badge sal-badge-gold" style={{ fontSize: "0.65rem" }}>{sp}</span>
+                        <span key={sp.id} className="sal-badge sal-badge-gold" style={{ fontSize: "0.65rem" }}>{sp.name}</span>
                       ))}
                     </div>
 
@@ -284,7 +306,7 @@ export default function StylistsPage() {
                       <div style={{ padding: "18px 20px 22px" }}>
                         <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 6, marginBottom: 16 }}>
                           {stylist.specialties.map((sp) => (
-                            <span key={sp} className="sal-badge sal-badge-gray" style={{ fontSize: "0.65rem" }}>{sp}</span>
+                            <span key={sp.id} className="sal-badge sal-badge-gray" style={{ fontSize: "0.65rem" }}>{sp.name}</span>
                           ))}
                         </div>
                         <button

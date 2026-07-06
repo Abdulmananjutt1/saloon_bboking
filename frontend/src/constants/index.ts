@@ -8,15 +8,15 @@ export const APP_ADDRESS = "Plot 45, F-7 Markaz, Islamabad";
 export const APP_HOURS = "Mon–Sat: 9AM–9PM  |  Sun: 10AM–7PM";
 
 export const SERVICE_CATEGORIES = [
-  { label: "Haircut", value: "haircut", icon: "✂️" },
-  { label: "Beard", value: "beard", icon: "🧔" },
-  { label: "Hair Color", value: "color", icon: "🎨" },
-  { label: "Facial", value: "facial", icon: "✨" },
-  { label: "Massage", value: "massage", icon: "💆" },
-  { label: "Nails", value: "nails", icon: "💅" },
-  { label: "Bridal", value: "bridal", icon: "👰" },
-  { label: "Waxing", value: "waxing", icon: "🌿" },
-  { label: "Keratin", value: "keratin", icon: "💇" },
+  { label: "Haircut",    value: "haircut",  icon: "Scissors" },
+  { label: "Beard",      value: "beard",    icon: "User" },
+  { label: "Hair Color", value: "color",    icon: "Palette" },
+  { label: "Facial",     value: "facial",   icon: "Sparkles" },
+  { label: "Massage",    value: "massage",  icon: "Heart" },
+  { label: "Nails",      value: "nails",    icon: "Star" },
+  { label: "Bridal",     value: "bridal",   icon: "Crown" },
+  { label: "Waxing",     value: "waxing",   icon: "Feather" },
+  { label: "Keratin",    value: "keratin",  icon: "Wind" },
 ];
 
 export const TIME_SLOTS = [
@@ -48,6 +48,7 @@ export const ROUTES = {
   ADMIN_STYLISTS: "/admin/stylists",
   ADMIN_CLIENTS: "/admin/clients",
   ADMIN_ANALYTICS: "/admin/analytics",
+  ADMIN_PAYROLL:   "/admin/payroll",
 } as const;
 
 export const NAV_LINKS = [
