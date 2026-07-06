@@ -4,11 +4,13 @@ import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import FaqAccordion from "@/components/FaqAccordion";
+import ContactForm from "@/components/ContactForm";
 import { ROUTES, APP_PHONE, APP_EMAIL, APP_ADDRESS, APP_HOURS } from "@/constants";
+import { Logo } from "@/components/ui/Logo";
 import {
   Phone, Mail, MapPin, Clock, MessageSquare,
-  Send, Facebook, Instagram, Youtube,
-  Twitter, Scissors
+  Facebook, Instagram, Youtube,
+  Twitter
 } from "lucide-react";
 
 export const metadata: Metadata = {
@@ -108,55 +110,7 @@ export default function ContactPage() {
 
               {/* Contact Form */}
               <div className="sal-glass" style={{ padding: 40, borderRadius: 20 }}>
-                <h2 className="sal-h2" style={{ marginBottom: 8 }}>Send a Message</h2>
-                <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginBottom: 32 }}>
-                  Fill out the form and we&apos;ll get back to you ASAP.
-                </p>
-
-                <form style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-                    <div>
-                      <label className="sal-label">First Name</label>
-                      <input type="text" className="sal-input" placeholder="John" required />
-                    </div>
-                    <div>
-                      <label className="sal-label">Last Name</label>
-                      <input type="text" className="sal-input" placeholder="Doe" required />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="sal-label">Email Address</label>
-                    <input type="email" className="sal-input" placeholder="you@email.com" required />
-                  </div>
-
-                  <div>
-                    <label className="sal-label">Phone Number</label>
-                    <input type="tel" className="sal-input" placeholder="0300-1234567" />
-                  </div>
-
-                  <div>
-                    <label className="sal-label">Subject</label>
-                    <select className="sal-input" style={{ color: "var(--text-primary)", cursor: "pointer" }}>
-                      <option value="">Select a topic</option>
-                      <option value="booking">Booking Inquiry</option>
-                      <option value="service">Service Questions</option>
-                      <option value="pricing">Pricing & Packages</option>
-                      <option value="feedback">Feedback & Reviews</option>
-                      <option value="other">Other</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="sal-label">Message</label>
-                    <textarea className="sal-input" rows={4} placeholder="Tell us how we can help..." style={{ resize: "vertical" }} />
-                  </div>
-
-                  <button type="submit" className="sal-btn sal-btn-gold" style={{ marginTop: 10 }}>
-                    <Send style={{ width: 16, height: 16 }} />
-                    Send Message
-                  </button>
-                </form>
+                <ContactForm />
               </div>
 
               {/* Contact Info & Social */}
@@ -350,16 +304,11 @@ export default function ContactPage() {
           }} />
 
           <div className="sal-container cta-dark-content" style={{ position: "relative", textAlign: "center" }}>
-            {/* Icon */}
-            <div className="anim-pulse" style={{
-              width: 70, height: 70, borderRadius: 20,
-              background: "var(--grad-gold-btn)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              margin: "0 auto 28px",
-              boxShadow: "0 12px 40px rgba(201,151,59,0.4)"
-            }}>
-              <Scissors style={{ width: 30, height: 30, color: "#0d0c0a", transform: "rotate(45deg)" }} />
-            </div>
+            <Logo
+              size={96}
+              className="anim-pulse"
+              style={{ margin: "0 auto 28px", boxShadow: "0 12px 40px rgba(201,151,59,0.4)" }}
+            />
 
             <h2 className="sal-h2" style={{ marginBottom: 16, fontSize: "clamp(2rem, 4vw, 3rem)" }}>
               Ready to Experience<br />

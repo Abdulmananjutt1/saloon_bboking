@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Scissors, Phone, MapPin, Clock } from "lucide-react";
 import { ROUTES, APP_PHONE } from "@/constants";
+import { Logo } from "@/components/ui/Logo";
 
 export default function CtaBanner() {
   return (
@@ -28,22 +29,7 @@ export default function CtaBanner() {
       />
 
       <div className="sal-container" style={{ position: "relative", textAlign: "center" }}>
-        {/* Icon */}
-        <div
-          style={{
-            width: 70,
-            height: 70,
-            borderRadius: 20,
-            background: "var(--grad-gold-btn)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            margin: "0 auto 28px",
-            boxShadow: "0 12px 40px rgba(201,151,59,0.4)",
-          }}
-        >
-          <Scissors style={{ width: 30, height: 30, color: "#0d0c0a", transform: "rotate(45deg)" }} />
-        </div>
+        <Logo size={96} style={{ margin: "0 auto 28px", boxShadow: "0 12px 40px rgba(201,151,59,0.4)" }} />
 
         <h2
           style={{ marginBottom: 16, fontSize: "clamp(2rem, 4vw, 3rem)" }}

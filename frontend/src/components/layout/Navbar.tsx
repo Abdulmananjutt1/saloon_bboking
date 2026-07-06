@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { APP_NAME, NAV_LINKS, ROUTES, APP_PHONE } from "@/constants";
-import { Menu, X, Scissors, Phone, Sun, Moon } from "lucide-react";
+import { Menu, X, Phone, Sun, Moon } from "lucide-react";
+import { Logo } from "@/components/ui/Logo";
 import { useTheme } from "./ThemeProvider";
 import { getSession } from "@/lib/session";
 
@@ -111,14 +112,7 @@ export default function Navbar() {
 
           {/* ── Logo ── */}
           <Link href={ROUTES.HOME} style={{ display: "flex", alignItems: "center", gap: 12, textDecoration: "none" }}>
-            <div style={{
-              width: 40, height: 40, borderRadius: 10,
-              background: "var(--grad-gold-btn)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              boxShadow: "0 4px 16px rgba(201,151,59,0.3)"
-            }}>
-              <Scissors style={{ width: 18, height: 18, color: "#0d0c0a", transform: "rotate(45deg)" }} />
-            </div>
+            <Logo size={60} />
             <div>
               <p style={{
                 fontSize: "1.1rem", fontWeight: 900, letterSpacing: "-0.02em",

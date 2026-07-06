@@ -5,6 +5,8 @@ import Image from "next/image";
 import { useState } from "react";
 import { Scissors, Mail, Sparkles, CheckCircle, ArrowRight, Gem, Calendar, BadgeCheck } from "lucide-react";
 import { APP_NAME, ROUTES } from "@/constants";
+import { Logo } from "@/components/ui/Logo";
+import { authApi } from "@/lib/api";
 
 type Step = "email" | "sent";
 
@@ -16,9 +18,17 @@ export default function ForgotPasswordPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 1600));
-    setLoading(false);
-    setStep("sent");
+    try {
+      const res = await authApi.forgotPassword(email) as { success: boolean; error?: string };
+      if (res.success) {
+        setStep("sent");
+      }
+    } catch {
+      // Still show success to avoid revealing whether email exists
+      setStep("sent");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -123,14 +133,7 @@ export default function ForgotPasswordPage() {
           display: "inline-flex", alignItems: "center", gap: 10,
           textDecoration: "none", marginBottom: 56
         }}>
-          <div style={{
-            width: 42, height: 42, borderRadius: 12,
-            background: "var(--grad-gold-btn)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: "0 6px 24px rgba(201,151,59,0.35)"
-          }}>
-            <Scissors style={{ width: 18, height: 18, color: "#0d0c0a", transform: "rotate(45deg)" }} />
-          </div>
+          <Logo size={58} />
           <div>
             <p style={{ fontWeight: 800, color: "var(--text-primary)", fontSize: "1rem", lineHeight: 1 }}>{APP_NAME}</p>
             <p style={{ fontSize: "0.6rem", textTransform: "uppercase", letterSpacing: "0.22em", color: "var(--text-muted)", marginTop: 2 }}>Premium Salon</p>

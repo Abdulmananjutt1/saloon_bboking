@@ -11,6 +11,7 @@ import chatRouter      from "./routes/chat";
 import pushRouter      from "./routes/push";
 import settingsRouter  from "./routes/settings";
 import payrollRouter   from "./routes/payroll";
+import contactRouter   from "./routes/contact";
 import { attachWebSocketServer } from "./websocket/server";
 
 const app  = express();
@@ -41,6 +42,7 @@ app.use("/api/chat",     chatRouter);
 app.use("/api/push",     pushRouter);
 app.use("/api/settings", settingsRouter);
 app.use("/api/payroll",  payrollRouter);
+app.use("/api/contact",  contactRouter);
 
 // ── Health check ──────────────────────────────
 app.get("/health", (_req, res) => {

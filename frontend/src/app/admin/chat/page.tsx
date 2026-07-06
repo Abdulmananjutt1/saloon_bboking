@@ -127,12 +127,12 @@ export default function AdminChatPage() {
                         <span style={{
                           position: "absolute", top: -3, right: -3,
                           minWidth: 16, height: 16, borderRadius: 99,
-                          background: "var(--grad-gold-btn)",
-                          color: "#0d0c0a", fontSize: "0.55rem", fontWeight: 900,
+                          background: "#ef4444",
+                          color: "#fff", fontSize: "0.55rem", fontWeight: 900,
                           display: "flex", alignItems: "center", justifyContent: "center",
                           padding: "0 4px",
                           border: "1.5px solid var(--bg-secondary)",
-                          boxShadow: "0 2px 6px rgba(201,151,59,0.5)"
+                          boxShadow: "0 2px 6px rgba(239,68,68,0.5)"
                         }}>
                           {unread > 99 ? "99+" : unread}
                         </span>

@@ -1,4 +1,5 @@
 export const APP_NAME = "Glamour Studio";
+export const LOGO_SRC = "/assets/logo.png";
 export const APP_TAGLINE = "Where Style Meets Perfection";
 export const APP_DESCRIPTION =
   "Premium salon & spa services — haircuts, color, beard, facials, and more. Book your appointment in seconds.";
@@ -42,6 +43,8 @@ export const ROUTES = {
   LOGIN: "/auth/login",
   REGISTER: "/auth/register",
   FORGOT_PASSWORD: "/auth/forgot-password",
+  RESET_PASSWORD: "/auth/reset-password",
+  VERIFY_EMAIL: "/auth/verify-email",
   ADMIN: "/admin",
   ADMIN_BOOKINGS: "/admin/bookings",
   ADMIN_SERVICES: "/admin/services",

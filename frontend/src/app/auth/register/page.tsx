@@ -5,13 +5,13 @@ import Image from "next/image";
 import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import {
-  Scissors, User, Mail, Phone, Lock,
+  User, Mail, Phone, Lock,
   Eye, EyeOff, Sparkles, CheckCircle, ArrowRight, AlertCircle,
 } from "lucide-react";
 import { APP_NAME, ROUTES } from "@/constants";
+import { Logo } from "@/components/ui/Logo";
 import { validateRegisterForm, hasErrors, type ValidationError } from "@/lib/validations";
 import { authApi } from "@/lib/api";
-import { saveSession, type SessionUser } from "@/lib/session";
 
 const PERKS = [
   "Instant booking confirmation — no waiting",
@@ -24,6 +24,8 @@ function RegisterPageInner() {
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirect");
   const [loading, setLoading]   = useState(false);
+  const [step, setStep]         = useState<"form" | "verify">("form");
+  const [registeredEmail, setRegisteredEmail] = useState("");
   const [showPass, setShowPass] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [form, setForm]         = useState({ name: "", email: "", phone: "", password: "", confirmPassword: "" });
@@ -63,17 +65,22 @@ function RegisterPageInner() {
     setLoading(true);
 
     try {
-      const data = await authApi.register(form) as { success: boolean; data: SessionUser; token?: string; error?: string; errors?: Record<string, string> };
+      const data = await authApi.register(form) as {
+        success: boolean;
+        requiresVerification?: boolean;
+        email?: string;
+        message?: string;
+        error?: string;
+        errors?: Record<string, string>;
+      };
 
       if (data.errors) { setErrors(data.errors); return; }
       if (!data.success) { setApiError(data.error ?? "Registration failed. Please try again."); return; }
 
-      saveSession(data.data, data.token ?? "");
-
-      if (redirectTo) {
-        window.location.href = decodeURIComponent(redirectTo);
-      } else {
-        window.location.href = ROUTES.DASHBOARD;
+      if (data.requiresVerification) {
+        setRegisteredEmail(data.email ?? form.email);
+        setStep("verify");
+        return;
       }
     } catch {
       setApiError("Network error. Please check your connection.");
@@ -181,21 +188,39 @@ function RegisterPageInner() {
           display: "inline-flex", alignItems: "center", gap: 10,
           textDecoration: "none", marginBottom: 52
         }}>
-          <div style={{
-            width: 42, height: 42, borderRadius: 12,
-            background: "var(--grad-gold-btn)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: "0 6px 24px rgba(201,151,59,0.35)"
-          }}>
-            <Scissors style={{ width: 18, height: 18, color: "#0d0c0a", transform: "rotate(45deg)" }} />
-          </div>
+          <Logo size={58} />
           <div>
             <p style={{ fontWeight: 800, color: "var(--text-primary)", fontSize: "1rem", lineHeight: 1 }}>{APP_NAME}</p>
             <p style={{ fontSize: "0.6rem", textTransform: "uppercase", letterSpacing: "0.22em", color: "var(--text-muted)", marginTop: 2 }}>Premium Salon</p>
           </div>
         </Link>
 
-        {/* Heading */}
+        {/* Heading / Form / Verify step */}
+        {step === "verify" ? (
+          <div>
+            <div style={{ width: 72, height: 72, borderRadius: 22, background: "var(--grad-gold-btn)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 32, boxShadow: "0 12px 40px rgba(201,151,59,0.35)" }}>
+              <Mail style={{ width: 32, height: 32, color: "#0d0c0a" }} />
+            </div>
+            <span className="sal-eyebrow">Almost There</span>
+            <h1 className="sal-h2" style={{ fontSize: "1.9rem", marginBottom: 12 }}>
+              Verify Your <span className="text-gold">Email</span>
+            </h1>
+            <p style={{ fontSize: "0.9rem", color: "var(--text-secondary)", lineHeight: 1.8, marginBottom: 20 }}>
+              We sent a verification link to <strong style={{ color: "var(--text-primary)" }}>{registeredEmail}</strong>.
+              Click the link in your email, then sign in to continue.
+            </p>
+            <Link href={ROUTES.LOGIN} className="sal-btn sal-btn-gold" style={{ justifyContent: "center", padding: "15px", fontSize: "0.92rem", display: "flex" }}>
+              Go to Sign In
+            </Link>
+            <p style={{ textAlign: "center", fontSize: "0.78rem", color: "var(--text-muted)", marginTop: 20 }}>
+              Didn&apos;t get it? Check spam or{" "}
+              <button type="button" onClick={() => setStep("form")} style={{ background: "none", border: "none", color: "var(--gold)", fontWeight: 600, cursor: "pointer", fontSize: "0.78rem" }}>
+                try again
+              </button>
+            </p>
+          </div>
+        ) : (
+        <>
         <div style={{ marginBottom: 36 }}>
           <span className="sal-eyebrow">New Here?</span>
           <h1 className="sal-h2" style={{ fontSize: "1.9rem", marginBottom: 8 }}>
@@ -325,6 +350,8 @@ function RegisterPageInner() {
             Sign in
           </Link>
         </p>
+        </>
+        )}
       </div>
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>

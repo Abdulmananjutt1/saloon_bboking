@@ -20,6 +20,10 @@ export const metadata: Metadata = {
   title: "Glamour Studio — Premium Salon & Spa",
   description:
     "Book haircut, beard, facial, color, massage & more at Glamour Studio. Islamabad's top-rated salon.",
+  icons: {
+    icon: "/assets/logo.png",
+    apple: "/assets/logo.png",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

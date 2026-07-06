@@ -1,22 +1,23 @@
 // ─────────────────────────────────────────────────────────
 //  Notifications Service — Glamour Studio
-//
-//  Single source of truth for all in-app notifications.
-//  Replaces scattered notification logic across files.
-//
-//  Usage:
-//    import { notificationService } from "@/services/notifications";
-//    notificationService.add({ title: "New Booking", body: "..." });
-//    notificationService.subscribe(listener);
 // ─────────────────────────────────────────────────────────
 
 export type NotificationType = "booking" | "chat" | "system" | "status";
+
+/** Which nav screen this notification belongs to */
+export type NotificationScreen =
+  | "bookings"
+  | "chat"
+  | "notifications"
+  | "appointments"
+  | "system";
 
 export interface AppNotification {
   id:        string;
   title:     string;
   body:      string;
   type:      NotificationType;
+  screen:    NotificationScreen;
   timestamp: number;
   read:      boolean;
   url?:      string;
@@ -31,12 +32,15 @@ class NotificationService {
   private storageKey = "gs_notifications";
 
   constructor() {
-    // Load persisted notifications from localStorage (client-side only)
     if (typeof window !== "undefined") {
       try {
         const stored = localStorage.getItem(this.storageKey);
         if (stored) {
-          this.notifications = JSON.parse(stored);
+          const parsed = JSON.parse(stored) as AppNotification[];
+          this.notifications = parsed.map((n) => ({
+            ...n,
+            screen: n.screen ?? this.inferScreen(n),
+          }));
         }
       } catch {
         this.notifications = [];
@@ -44,29 +48,34 @@ class NotificationService {
     }
   }
 
-  // ── Add a new notification ────────────────────────────
+  private inferScreen(n: Pick<AppNotification, "type" | "url">): NotificationScreen {
+    if (n.type === "chat" || n.url?.includes("/chat")) return "chat";
+    if (n.type === "booking" || n.url?.includes("/bookings")) return "bookings";
+    if (n.url?.includes("appointments") || n.type === "status") return "appointments";
+    return "notifications";
+  }
+
   add(payload: Omit<AppNotification, "id" | "timestamp" | "read">): AppNotification {
     const notif: AppNotification = {
       ...payload,
+      screen: payload.screen ?? this.inferScreen(payload),
       id:        `n-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       timestamp: Date.now(),
       read:      false,
     };
-    // Keep latest 50 notifications
     this.notifications = [notif, ...this.notifications].slice(0, 50);
     this.persist();
     this.emit();
     return notif;
   }
 
-  // ── Mark all as read ─────────────────────────────────
   markAllRead(): void {
+    if (this.notifications.every((n) => n.read)) return;
     this.notifications = this.notifications.map((n) => ({ ...n, read: true }));
     this.persist();
     this.emit();
   }
 
-  // ── Mark a single notification as read ───────────────
   markRead(id: string): void {
     this.notifications = this.notifications.map((n) =>
       n.id === id ? { ...n, read: true } : n
@@ -75,46 +84,51 @@ class NotificationService {
     this.emit();
   }
 
-  // ── Clear all notifications ───────────────────────────
+  markReadByScreen(screen: NotificationScreen): void {
+    const hasUnread = this.notifications.some((n) => !n.read && n.screen === screen);
+    if (!hasUnread) return;
+    this.notifications = this.notifications.map((n) =>
+      n.screen === screen ? { ...n, read: true } : n
+    );
+    this.persist();
+    this.emit();
+  }
+
   clearAll(): void {
     this.notifications = [];
     this.persist();
     this.emit();
   }
 
-  // ── Get current notifications ─────────────────────────
   getAll(): AppNotification[] {
     return [...this.notifications];
   }
 
-  // ── Get unread count ──────────────────────────────────
   getUnreadCount(): number {
     return this.notifications.filter((n) => !n.read).length;
   }
 
-  // ── Subscribe to updates ──────────────────────────────
+  getUnreadByScreen(screen: NotificationScreen): number {
+    return this.notifications.filter((n) => !n.read && n.screen === screen).length;
+  }
+
   subscribe(listener: Listener): () => void {
     this.listeners.add(listener);
-    // Immediately emit current state
     listener(this.getAll());
-    // Return unsubscribe function
     return () => this.listeners.delete(listener);
   }
 
-  // ── Private: persist to localStorage ─────────────────
   private persist(): void {
     if (typeof window === "undefined") return;
     try {
       localStorage.setItem(this.storageKey, JSON.stringify(this.notifications));
-    } catch { /* storage may be full */ }
+    } catch { /* storage full */ }
   }
 
-  // ── Private: emit to all listeners ───────────────────
   private emit(): void {
     const current = this.getAll();
     this.listeners.forEach((listener) => listener(current));
   }
 }
 
-// Singleton export — one instance for the whole app
 export const notificationService = new NotificationService();

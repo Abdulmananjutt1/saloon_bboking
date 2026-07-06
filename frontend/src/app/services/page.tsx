@@ -124,6 +124,7 @@ export default async function ServicesPage({ searchParams }: Props) {
             }}>
               <Link
                 href={ROUTES.SERVICES}
+                scroll={false}
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
@@ -157,6 +158,7 @@ export default async function ServicesPage({ searchParams }: Props) {
                   <Link
                     key={c.value}
                     href={`${ROUTES.SERVICES}?cat=${c.value}`}
+                    scroll={false}
                     style={{
                       display: "inline-flex",
                       alignItems: "center",

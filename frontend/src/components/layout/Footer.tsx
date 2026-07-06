@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { APP_NAME, ROUTES, APP_PHONE, APP_EMAIL, APP_ADDRESS, APP_HOURS } from "@/constants";
-import { Scissors, Mail, Phone, MapPin, Clock } from "lucide-react";
+import { Mail, Phone, MapPin, Clock } from "lucide-react";
+import { Logo } from "@/components/ui/Logo";
 
 export default function Footer() {
   return (
@@ -33,13 +34,7 @@ export default function Footer() {
           {/* Brand */}
           <div>
             <Link href={ROUTES.HOME} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16, textDecoration: "none" }}>
-              <div style={{
-                width: 36, height: 36, borderRadius: 9,
-                background: "var(--grad-gold-btn)",
-                display: "flex", alignItems: "center", justifyContent: "center"
-              }}>
-                <Scissors style={{ width: 16, height: 16, color: "#0d0c0a", transform: "rotate(45deg)" }} />
-              </div>
+              <Logo size={54} />
               <span style={{
                 fontSize: "1.05rem", fontWeight: 900,
                 background: "var(--grad-gold)",

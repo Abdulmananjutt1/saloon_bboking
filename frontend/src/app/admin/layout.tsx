@@ -5,30 +5,32 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { ROUTES, APP_NAME } from "@/constants";
 import {
-  Scissors, LayoutDashboard, CalendarDays,
-  Users, UserCheck, BarChart3, LogOut, Settings, MessageSquare, Bell, ChevronUp, Wallet
+  LayoutDashboard, CalendarDays,
+  Users, UserCheck, BarChart3, LogOut, Settings, MessageSquare, Bell, ChevronUp, Wallet, Scissors
 } from "lucide-react";
-import { useAdminUnread } from "@/hooks/useAdminUnread";
+import { Logo } from "@/components/ui/Logo";
+import { useAdminNavBadges } from "@/hooks/useAdminNavBadges";
+import { RedBadge } from "@/components/ui/RedBadge";
 import { ToastContainer, useToast } from "@/components/ui/Toast";
 import { clearSession, pushSessionToast, popSessionToast } from "@/lib/session";
 
 const NAV = [
   { label: "Dashboard",     href: ROUTES.ADMIN,           icon: LayoutDashboard },
-  { label: "Bookings",      href: ROUTES.ADMIN_BOOKINGS,  icon: CalendarDays },
+  { label: "Bookings",      href: ROUTES.ADMIN_BOOKINGS,  icon: CalendarDays,  badgeKey: "bookings" },
   { label: "Services",      href: ROUTES.ADMIN_SERVICES,  icon: Scissors },
   { label: "Stylists",      href: ROUTES.ADMIN_STYLISTS,  icon: Users },
   { label: "Clients",       href: ROUTES.ADMIN_CLIENTS,   icon: UserCheck },
   { label: "Analytics",     href: ROUTES.ADMIN_ANALYTICS, icon: BarChart3 },
   { label: "Payroll",       href: ROUTES.ADMIN_PAYROLL,   icon: Wallet },
-  { label: "Chat",          href: "/admin/chat",          icon: MessageSquare, showUnread: true },
-  { label: "Notifications", href: "/admin/notifications", icon: Bell },
+  { label: "Chat",          href: "/admin/chat",          icon: MessageSquare, badgeKey: "chat" },
+  { label: "Notifications", href: "/admin/notifications", icon: Bell,          badgeKey: "notifications" },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const { totalUnread } = useAdminUnread();
+  const { getBadge } = useAdminNavBadges();
   const { toasts, toast, remove } = useToast();
 
   // Show toast from sessionStorage (e.g. after login)
@@ -62,14 +64,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         {/* Logo */}
         <div style={{ padding: "24px 20px", borderBottom: "1px solid var(--border-light)" }}>
           <Link href={ROUTES.HOME} style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
-            <div style={{
-              width: 36, height: 36, borderRadius: 10,
-              background: "var(--grad-gold-btn)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              boxShadow: "0 4px 16px rgba(201,151,59,0.3)"
-            }}>
-              <Scissors style={{ width: 16, height: 16, color: "#0d0c0a", transform: "rotate(45deg)" }} />
-            </div>
+            <Logo size={54} />
             <div>
               <p style={{ fontSize: "0.88rem", fontWeight: 800, color: "var(--text-primary)", lineHeight: 1 }}>{APP_NAME}</p>
               <p style={{ fontSize: "0.58rem", textTransform: "uppercase", letterSpacing: "0.25em", color: "var(--text-muted)", marginTop: 2 }}>Admin Panel</p>
@@ -79,9 +74,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         {/* Nav */}
         <nav style={{ flex: 1, padding: "16px 12px", overflowY: "auto", display: "flex", flexDirection: "column", gap: 2 }}>
-          {NAV.map(({ label, href, icon: Icon, showUnread }) => {
+          {NAV.map(({ label, href, icon: Icon, badgeKey }) => {
             const on    = active(href);
-            const badge = showUnread ? totalUnread : 0;
+            const badge = badgeKey ? getBadge(href) : 0;
             return (
               <Link
                 key={href}
@@ -99,18 +94,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               >
                 <Icon style={{ width: 15, height: 15, color: on ? "var(--gold)" : "var(--text-muted)", flexShrink: 0 }} />
                 <span style={{ flex: 1 }}>{label}</span>
-                {badge > 0 && (
-                  <span style={{
-                    minWidth: 18, height: 18, borderRadius: 99,
-                    background: "var(--grad-gold-btn)",
-                    color: "#0d0c0a", fontSize: "0.6rem", fontWeight: 800,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    padding: "0 5px", flexShrink: 0,
-                    boxShadow: "0 2px 8px rgba(201,151,59,0.4)"
-                  }}>
-                    {badge > 99 ? "99+" : badge}
-                  </span>
-                )}
+                <RedBadge count={badge} />
               </Link>
             );
           })}

@@ -1,10 +1,13 @@
 "use client";
 
+import { useEffect } from "react";
 import { MessageSquare, CalendarDays, CheckCircle2 } from "lucide-react";
 import { useNotifications } from "@/hooks/useNotifications";
 
 export default function NotificationsPage() {
-  const { notifs, loading, clearAll } = useNotifications();
+  const { notifs, loading, clearAll, markRead } = useNotifications();
+
+  useEffect(() => { markRead(); }, [markRead]);
 
   return (
     <div style={{ animation: "fadeIn 0.3s ease-out", maxWidth: 800 }}>

@@ -10,7 +10,9 @@ import {
 } from "lucide-react";
 
 import { ROUTES, APP_NAME } from "@/constants";
+import { Logo } from "@/components/ui/Logo";
 import { useClientDashboard } from "@/hooks/useClientDashboard";
+import { RedBadge } from "@/components/ui/RedBadge";
 import { ToastContainer, useToast } from "@/components/ui/Toast";
 import { popSessionToast } from "@/lib/session";
 
@@ -34,6 +36,7 @@ export default function ClientDashboard() {
     chatMessages, newMessage, setNewMessage,
     wsStatus, sendMessage, chatEndRef,
     unreadCount, markChatRead, markChatClosed,
+    appointmentUnread, markAppointmentsRead,
     logout, updateProfile,
   } = useClientDashboard();
 
@@ -58,12 +61,15 @@ export default function ClientDashboard() {
     }
   }, []);
 
-  // Mark chat read when chat tab is open, closed otherwise
+  // Mark chat / appointments read when tab is open
   useEffect(() => {
     if (activeTab === "chat") {
       markChatRead();
     } else {
       markChatClosed();
+    }
+    if (activeTab === "appointments") {
+      markAppointmentsRead();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
@@ -100,14 +106,7 @@ export default function ClientDashboard() {
         {/* Logo */}
         <div style={{ padding: "24px 20px", borderBottom: "1px solid var(--border-light)" }}>
           <Link href={ROUTES.HOME} style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
-            <div style={{
-              width: 36, height: 36, borderRadius: 10,
-              background: "var(--grad-gold-btn)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              boxShadow: "0 4px 16px rgba(201,151,59,0.3)"
-            }}>
-              <Scissors style={{ width: 15, height: 15, color: "#0d0c0a", transform: "rotate(45deg)" }} />
-            </div>
+            <Logo size={54} />
             <div>
               <p style={{ fontWeight: 800, color: "var(--text-primary)", fontSize: "0.88rem", lineHeight: 1, fontFamily: "var(--font-display), Georgia, serif" }}>{APP_NAME}</p>
               <p style={{ fontSize: "0.55rem", textTransform: "uppercase", letterSpacing: "0.25em", color: "var(--text-muted)", marginTop: 3 }}>Client Portal</p>
@@ -119,7 +118,7 @@ export default function ClientDashboard() {
         <nav style={{ flex: 1, padding: "16px 12px", overflowY: "auto", display: "flex", flexDirection: "column", gap: 2 }}>
           {[
             { tab: "overview",      label: "Overview",            Icon: Scissors,      badge: 0 },
-            { tab: "appointments",  label: "My Appointments",     Icon: CalendarDays,  badge: 0 },
+            { tab: "appointments",  label: "My Appointments",     Icon: CalendarDays,  badge: appointmentUnread },
             { tab: "chat",          label: "Consultation Chat",   Icon: MessageSquare, badge: unreadCount },
             { tab: "settings",      label: "Profile Settings",    Icon: Settings,      badge: 0 },
           ].map(({ tab, label, Icon, badge }) => {
@@ -132,17 +131,7 @@ export default function ClientDashboard() {
               >
                 <Icon style={{ width: 15, height: 15, color: on ? "var(--gold)" : "var(--text-muted)", flexShrink: 0 }} />
                 <span style={{ flex: 1, textAlign: "left" }}>{label}</span>
-                {badge > 0 && (
-                  <span style={{
-                    minWidth: 18, height: 18, borderRadius: 99,
-                    background: "var(--grad-gold-btn)",
-                    color: "#0d0c0a", fontSize: "0.6rem", fontWeight: 800,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    padding: "0 5px", flexShrink: 0
-                  }}>
-                    {badge > 99 ? "99+" : badge}
-                  </span>
-                )}
+                <RedBadge count={badge} />
               </button>
             );
           })}
@@ -426,18 +415,7 @@ export default function ClientDashboard() {
                   >
                     <MessageSquare style={{ width: 13, height: 13 }} />
                     Start Chatting
-                    {unreadCount > 0 && (
-                      <span style={{
-                        marginLeft: 4,
-                        minWidth: 18, height: 18, borderRadius: 99,
-                        background: "#0d0c0a",
-                        color: "var(--gold)", fontSize: "0.6rem", fontWeight: 800,
-                        display: "inline-flex", alignItems: "center", justifyContent: "center",
-                        padding: "0 5px"
-                      }}>
-                        {unreadCount > 99 ? "99+" : unreadCount}
-                      </span>
-                    )}
+                    <RedBadge count={unreadCount} />
                   </button>
                 </div>
               </div>

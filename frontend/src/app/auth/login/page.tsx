@@ -4,8 +4,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { Scissors, Mail, Lock, Eye, EyeOff, Sparkles, AlertCircle } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, Sparkles, AlertCircle } from "lucide-react";
 import { APP_NAME, ROUTES } from "@/constants";
+import { Logo } from "@/components/ui/Logo";
 import { validateLoginForm, hasErrors, type ValidationError } from "@/lib/validations";
 import { ToastContainer, useToast } from "@/components/ui/Toast";
 import { authApi } from "@/lib/api";
@@ -20,6 +21,8 @@ function LoginPageInner() {
   const [form, setForm]           = useState({ email: "", password: "" });
   const [errors, setErrors]       = useState<ValidationError>({});
   const [apiError, setApiError]   = useState("");
+  const [unverifiedEmail, setUnverifiedEmail] = useState("");
+  const [resending, setResending] = useState(false);
   const { toasts, toast, remove } = useToast();
 
   // Show toast from sessionStorage (e.g. after logout)
@@ -54,19 +57,32 @@ function LoginPageInner() {
     setLoading(true);
 
     try {
-      const data = await authApi.login(form) as { success: boolean; data: SessionUser; token?: string; error?: string; errors?: Record<string, string> };
+      const data = await authApi.login(form) as {
+        success: boolean;
+        data?: SessionUser;
+        token?: string;
+        error?: string;
+        errors?: Record<string, string>;
+        requiresVerification?: boolean;
+      };
+
+      if (data.requiresVerification) {
+        setUnverifiedEmail(data.errors?.email ?? form.email);
+        setApiError(data.errors?.general ?? "Please verify your email before signing in.");
+        return;
+      }
 
       if (data.errors?.general) { setApiError(data.errors.general); return; }
       if (data.errors)           { setErrors(data.errors); return; }
       if (!data.success)         { setApiError(data.error ?? "Login failed. Please try again."); return; }
 
-      saveSession(data.data, data.token ?? "");
-      pushSessionToast("success", "Login Successful", `Welcome back, ${data.data.name}!`);
+      saveSession(data.data!, data.token ?? "");
+      pushSessionToast("success", "Login Successful", `Welcome back, ${data.data!.name}!`);
 
       if (redirectTo) {
         window.location.href = decodeURIComponent(redirectTo);
       } else {
-        window.location.href = isAdmin(data.data) ? ROUTES.ADMIN : ROUTES.DASHBOARD;
+        window.location.href = isAdmin(data.data!) ? ROUTES.ADMIN : ROUTES.DASHBOARD;
       }
     } catch {
       setApiError("Network error. Please check your connection.");
@@ -136,14 +152,7 @@ function LoginPageInner() {
           display: "inline-flex", alignItems: "center", gap: 10,
           textDecoration: "none", marginBottom: 56
         }}>
-          <div style={{
-            width: 40, height: 40, borderRadius: 12,
-            background: "var(--grad-gold-btn)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: "0 6px 24px rgba(201,151,59,0.35)"
-          }}>
-            <Scissors style={{ width: 18, height: 18, color: "#0d0c0a", transform: "rotate(45deg)" }} />
-          </div>
+          <Logo size={58} />
           <div>
             <p style={{ fontWeight: 800, color: "var(--text-primary)", fontSize: "1rem", lineHeight: 1 }}>{APP_NAME}</p>
             <p style={{ fontSize: "0.62rem", textTransform: "uppercase", letterSpacing: "0.2em", color: "var(--text-muted)" }}>Premium Salon</p>
@@ -163,9 +172,32 @@ function LoginPageInner() {
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
           {/* General API error */}
           {apiError && (
-            <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 16px", borderRadius: 10, background: "var(--color-error-bg)", border: "1px solid rgba(248,113,113,0.25)" }}>
-              <AlertCircle style={{ width: 15, height: 15, color: "var(--color-error)", flexShrink: 0 }} />
-              <p style={{ fontSize: "0.8rem", color: "var(--color-error)" }}>{apiError}</p>
+            <div style={{ padding: "12px 16px", borderRadius: 10, background: "var(--color-error-bg)", border: "1px solid rgba(248,113,113,0.25)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <AlertCircle style={{ width: 15, height: 15, color: "var(--color-error)", flexShrink: 0 }} />
+                <p style={{ fontSize: "0.8rem", color: "var(--color-error)" }}>{apiError}</p>
+              </div>
+              {unverifiedEmail && (
+                <button
+                  type="button"
+                  disabled={resending}
+                  onClick={async () => {
+                    setResending(true);
+                    try {
+                      await authApi.resendVerification(unverifiedEmail);
+                      setApiError("Verification email sent! Please check your inbox.");
+                      setUnverifiedEmail("");
+                    } catch {
+                      setApiError("Failed to resend. Please try again.");
+                    } finally {
+                      setResending(false);
+                    }
+                  }}
+                  style={{ marginTop: 10, background: "none", border: "none", color: "var(--gold)", fontWeight: 700, fontSize: "0.78rem", cursor: resending ? "not-allowed" : "pointer", padding: 0 }}
+                >
+                  {resending ? "Sending…" : "Resend verification email"}
+                </button>
+              )}
             </div>
           )}
 
