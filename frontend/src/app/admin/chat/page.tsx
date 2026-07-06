@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { MessageSquare, Send, Search, Users, Wifi, WifiOff } from "lucide-react";
+import { MessageSquare, Send, Search, Users } from "lucide-react";
 import { useAdminChat } from "@/hooks/useAdminChat";
 import { useAdminUnread } from "@/hooks/useAdminUnread";
 
@@ -55,19 +55,6 @@ export default function AdminChatPage() {
             </h1>
             <p style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>Real-time messaging with clients</p>
           </div>
-        </div>
-
-        {/* WS Status */}
-        <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 14px", borderRadius: 99,
-          background: wsStatus === "connected" ? "var(--status-confirmed-bg)" : "var(--status-cancelled-bg)",
-          border: `1px solid ${wsStatus === "connected" ? "var(--status-confirmed-border)" : "var(--status-cancelled-border)"}` }}>
-          {wsStatus === "connected"
-            ? <Wifi style={{ width: 13, height: 13, color: "var(--status-confirmed)" }} />
-            : <WifiOff style={{ width: 13, height: 13, color: "var(--status-cancelled)" }} />}
-          <span style={{ fontSize: "0.7rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em",
-            color: wsStatus === "connected" ? "var(--status-confirmed)" : "var(--status-cancelled)" }}>
-            {wsStatus}
-          </span>
         </div>
       </div>
 

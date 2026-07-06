@@ -3,16 +3,23 @@
 import { useState } from "react";
 import { formatPrice, formatDateShort } from "@/lib/utils";
 import { Download, Plus, CalendarDays, Clock, User, Scissors, ChevronDown } from "lucide-react";
-import Link from "next/link";
-import { ROUTES, STATUS_META, CLIENT_AVATAR_COLORS, type BookingStatus } from "@/constants";
+import { STATUS_META, CLIENT_AVATAR_COLORS, type BookingStatus } from "@/constants";
 import { useBookings } from "@/hooks/useBookings";
+import AdminBookingModal from "@/components/admin/bookings/AdminBookingModal";
 
 export default function AdminBookingsPage() {
   const [activeStatus, setActive] = useState("all");
-  const { bookings, loading, updating, statusCounts, updateStatus } = useBookings(activeStatus);
+  const [modalOpen, setModalOpen] = useState(false);
+  const { bookings, loading, updating, statusCounts, updateStatus, refresh } = useBookings(activeStatus);
 
   return (
     <div style={{ maxWidth: 1280, margin: "0 auto" }}>
+
+      <AdminBookingModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onCreated={() => { setModalOpen(false); refresh(); }}
+      />
 
       {/* ── Header ── */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16, marginBottom: 28 }}>
@@ -26,9 +33,12 @@ export default function AdminBookingsPage() {
           <button style={{ display: "flex", alignItems: "center", gap: 7, padding: "10px 18px", borderRadius: 11, background: "var(--bg-card)", border: "1px solid var(--border-light)", color: "var(--text-secondary)", fontSize: "0.8rem", fontWeight: 600, cursor: "pointer" }}>
             <Download style={{ width: 14, height: 14 }} /> Export
           </button>
-          <Link href={ROUTES.BOOK} style={{ display: "flex", alignItems: "center", gap: 7, padding: "10px 20px", borderRadius: 11, background: "var(--grad-gold-btn)", border: "none", color: "#0d0c0a", fontSize: "0.82rem", fontWeight: 700, textDecoration: "none", boxShadow: "0 4px 20px rgba(201,151,59,0.3)" }}>
+          <button
+            onClick={() => setModalOpen(true)}
+            style={{ display: "flex", alignItems: "center", gap: 7, padding: "10px 20px", borderRadius: 11, background: "var(--grad-gold-btn)", border: "none", color: "#0d0c0a", fontSize: "0.82rem", fontWeight: 700, cursor: "pointer", boxShadow: "0 4px 20px rgba(201,151,59,0.3)" }}
+          >
             <Plus style={{ width: 14, height: 14 }} /> New Booking
-          </Link>
+          </button>
         </div>
       </div>
 

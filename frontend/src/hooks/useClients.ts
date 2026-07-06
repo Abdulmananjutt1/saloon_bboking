@@ -38,21 +38,23 @@ export function useClients() {
   const [apiError, setApiError]   = useState("");
   const [form, setFormState]      = useState(EMPTY_FORM);
 
-  const fetchClients = async (q = "") => {
-    setLoading(true);
+  const fetchClients = async (q = "", showSpinner = true) => {
+    if (showSpinner) setLoading(true);
     try {
       const data = await clientsApi.getAll(q || undefined) as ApiResponse<Client[]>;
       if (data.success) setClients(data.data);
     } finally {
-      setLoading(false);
+      if (showSpinner) setLoading(false);
     }
   };
 
+  // Initial load
   useEffect(() => { fetchClients(); }, []);  
 
-  // Debounced search
+  // Debounced search — skip spinner so there's no blink on every keystroke
   useEffect(() => {
-    const t = setTimeout(() => fetchClients(search), 300);
+    if (search === "") return; // initial empty-string change is handled by the mount effect above
+    const t = setTimeout(() => fetchClients(search, false), 300);
     return () => clearTimeout(t);
   }, [search]);  
 
@@ -88,7 +90,7 @@ export function useClients() {
         return;
       }
       setSaved(true);
-      await fetchClients(search);
+      await fetchClients(search, false);
       setTimeout(closeModal, 1200);
     } catch {
       setApiError("Network error. Please try again.");

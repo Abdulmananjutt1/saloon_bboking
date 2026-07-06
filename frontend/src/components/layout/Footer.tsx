@@ -60,7 +60,7 @@ export default function Footer() {
 
           {/* Services */}
           <div>
-            <h3 style={{ fontSize: "0.68rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.2em", color: "var(--text-secondary)", marginBottom: 20 }}>
+            <h3 style={{ fontSize: "0.68rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.2em", color: "rgba(255,255,255,0.9)", marginBottom: 20 }}>
               Services
             </h3>
             <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: 10 }}>
@@ -81,7 +81,7 @@ export default function Footer() {
 
           {/* Quick Links */}
           <div>
-            <h3 style={{ fontSize: "0.68rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.2em", color: "var(--text-secondary)", marginBottom: 20 }}>
+            <h3 style={{ fontSize: "0.68rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.2em", color: "rgba(255,255,255,0.9)", marginBottom: 20 }}>
               Quick Links
             </h3>
             <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: 10 }}>
@@ -102,7 +102,7 @@ export default function Footer() {
 
           {/* Contact */}
           <div>
-            <h3 style={{ fontSize: "0.68rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.2em", color: "var(--text-secondary)", marginBottom: 20 }}>
+            <h3 style={{ fontSize: "0.68rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.2em", color: "rgba(255,255,255,0.9)", marginBottom: 20 }}>
               Find Us
             </h3>
             <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: 16 }}>

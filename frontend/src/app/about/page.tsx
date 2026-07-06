@@ -4,7 +4,7 @@ import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { ROUTES, STATS, APP_PHONE, APP_EMAIL, APP_ADDRESS } from "@/constants";
-import { STYLISTS, REVIEWS } from "@/lib/data/salon";
+import { REVIEWS } from "@/lib/data/salon";
 import {
   Scissors, Phone, MapPin, ChevronRight, Mail,
   Sparkles, Star, Calendar,
@@ -17,8 +17,29 @@ export const metadata: Metadata = {
   description: "Discover the story behind Islamabad's premier salon — expert stylists, luxury products, and a commitment to excellence since 2015.",
 };
 
-export default function AboutPage() {
-  const featuredStylists = STYLISTS.slice(0, 3);
+interface Specialty { id: string; name: string; }
+interface StylistData {
+  id: string; name: string; role: string; avatar: string;
+  bio: string; experience: number; rating: number;
+  reviewCount: number; available: boolean;
+  specialties: Specialty[];
+}
+
+async function getTopStylists(): Promise<StylistData[]> {
+  try {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api"}/stylists`,
+      { cache: "no-store" }
+    );
+    const json = await res.json();
+    return json.success ? json.data.slice(0, 4) : [];
+  } catch {
+    return [];
+  }
+}
+
+export default async function AboutPage() {
+  const featuredStylists = await getTopStylists();
   const featuredReviews = REVIEWS.slice(0, 4);
 
   return (
@@ -53,7 +74,7 @@ export default function AboutPage() {
 
           {/* Content */}
           <div className="sal-container" style={{ position: "relative", paddingTop: 120, paddingBottom: 80, width: "100%" }}>
-            <div style={{ maxWidth: 720 }}>
+            <div className="hero-content" style={{ maxWidth: 720 }}>
               {/* Top badge */}
               <div className="sal-glass-gold anim-up" style={{
                 display: "inline-flex", alignItems: "center", gap: 8,
@@ -253,10 +274,10 @@ export default function AboutPage() {
               </Link>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 24 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 24, alignItems: "stretch" }}>
               {featuredStylists.map((stylist) => (
-                <div key={stylist.id} className="team-card" style={{ textAlign: "center" }}>
-                  <div style={{ position: "relative", height: 260, overflow: "hidden" }}>
+                <div key={stylist.id} className="team-card" style={{ textAlign: "center", display: "flex", flexDirection: "column" }}>
+                  <div style={{ position: "relative", height: 260, overflow: "hidden", flexShrink: 0 }}>
                     <Image
                       src={stylist.avatar}
                       alt={stylist.name}
@@ -278,7 +299,7 @@ export default function AboutPage() {
                       </div>
                     )}
                   </div>
-                  <div style={{ padding: "20px 20px 24px" }}>
+                  <div style={{ padding: "20px 20px 24px", display: "flex", flexDirection: "column", flex: 1 }}>
                     <h3 style={{ fontWeight: 800, color: "var(--text-primary)", fontSize: "1rem", marginBottom: 4 }}>
                       {stylist.name}
                     </h3>
@@ -289,13 +310,13 @@ export default function AboutPage() {
                       <Star style={{ width: 14, height: 14, color: "var(--gold)" }} />
                       <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{stylist.rating} ({stylist.reviewCount})</span>
                     </div>
-                    <p style={{ fontSize: "0.72rem", color: "var(--text-muted)", lineHeight: 1.6, marginBottom: 16 }}>
+                    <p style={{ fontSize: "0.72rem", color: "var(--text-muted)", lineHeight: 1.6, marginBottom: 16, flex: 1 }}>
                       {stylist.bio.slice(0, 80)}…
                     </p>
                     <Link
                       href={`${ROUTES.BOOK}?stylist=${stylist.id}`}
                       className="sal-btn sal-btn-gold"
-                      style={{ width: "100%", padding: "10px 16px", fontSize: "0.75rem" }}
+                      style={{ width: "100%", padding: "11px 16px", fontSize: "0.75rem", justifyContent: "center" }}
                     >
                       <Scissors style={{ width: 13, height: 13 }} />
                       Book with {stylist.name.split(" ")[0]}

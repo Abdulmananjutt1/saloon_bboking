@@ -6,6 +6,7 @@ import Footer from "@/components/layout/Footer";
 import { GALLERY_IMAGES } from "@/lib/data/salon";
 import { ROUTES } from "@/constants";
 import { Scissors, Sparkles, ArrowRight, Calendar } from "lucide-react";
+import GalleryGrid from "@/components/gallery/GalleryGrid";
 
 export const metadata: Metadata = {
   title: "Gallery — Glamour Studio",
@@ -25,15 +26,6 @@ const EXTRA = [
 const ALL_IMAGES = [...GALLERY_IMAGES, ...EXTRA];
 
 /* Category filters */
-const FILTERS = [
-  { label: "All",     value: "all",     icon: "✨" },
-  { label: "Haircut", value: "haircut", icon: "✂️" },
-  { label: "Beard",   value: "beard",   icon: "🧔" },
-  { label: "Color",   value: "color",   icon: "🎨" },
-  { label: "Facial",  value: "facial",  icon: "💆" },
-  { label: "Nails",   value: "nails",   icon: "💅" },
-  { label: "Bridal",  value: "bridal",  icon: "👰" },
-];
 
 /* Masonry layout: defines which cells span 2 columns/rows */
 const LARGE_INDICES = new Set([0, 5, 9, 14]);   // these cells get a bigger size
@@ -76,7 +68,7 @@ export default function GalleryPage() {
           }} />
 
           <div className="sal-container" style={{ position: "relative", paddingTop: 120, paddingBottom: 80, width: "100%" }}>
-            <div style={{ maxWidth: 680, textAlign: "center", margin: "0 auto" }}>
+            <div className="hero-content" style={{ maxWidth: 680, textAlign: "center", margin: "0 auto" }}>
 
               {/* Badge */}
               <div className="sal-glass-gold anim-up" style={{
@@ -132,99 +124,8 @@ export default function GalleryPage() {
               </p>
             </div>
 
-            {/* Category filter pills */}
-            <div style={{
-              display: "flex", alignItems: "center", gap: 8,
-              justifyContent: "center", flexWrap: "wrap",
-              marginBottom: 48
-            }}>
-              {FILTERS.map((f, i) => (
-                <div
-                  key={f.value}
-                  style={{
-                    display: "inline-flex", alignItems: "center", gap: 6,
-                    padding: "8px 16px", borderRadius: 8,
-                    fontSize: "0.82rem", fontWeight: 600,
-                    cursor: "default",
-                    /* first tab (All) gets gold style, rest ghost */
-                    ...(i === 0
-                      ? {
-                          background: "var(--grad-gold-btn)",
-                          color: "#0d0c0a",
-                          boxShadow: "0 4px 20px rgba(201,151,59,0.3)"
-                        }
-                      : {
-                          background: "var(--bg-card)",
-                          color: "var(--text-secondary)",
-                          border: "1px solid var(--border-light)"
-                        }
-                    )
-                  }}
-                >
-                  <span style={{ fontSize: "0.9rem" }}>{f.icon}</span>
-                  {f.label}
-                </div>
-              ))}
-            </div>
-
-            {/* ── Masonry grid ── */}
-            <div style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(4, 1fr)",
-              gridAutoRows: "220px",
-              gap: 16
-            }}>
-              {ALL_IMAGES.map((img, i) => {
-                const large = LARGE_INDICES.has(i);
-                return (
-                  <div
-                    key={`${img.id}-${i}`}
-                    className="gallery-img-wrap"
-                    style={{
-                      gridColumn: large ? "span 2" : "span 1",
-                      gridRow:    large ? "span 2" : "span 1",
-                      borderRadius: "var(--r-lg)",
-                      overflow: "hidden"
-                    }}
-                  >
-                    <div style={{ position: "relative", width: "100%", height: "100%" }}>
-                      <Image
-                        src={img.src}
-                        alt={img.caption ?? `Gallery ${i + 1}`}
-                        fill
-                        className="object-cover"
-                        sizes="(max-width:640px) 50vw, (max-width:1024px) 33vw, 25vw"
-                      />
-
-                      {/* Hover overlay */}
-                      <div className="gallery-overlay" style={{ flexDirection: "column", gap: 8, padding: 20 }}>
-                        {/* Category badge */}
-                        <div className="sal-glass-gold" style={{
-                          padding: "4px 12px", borderRadius: 99,
-                          fontSize: "0.65rem", fontWeight: 700,
-                          color: "var(--gold-light)", textTransform: "uppercase",
-                          letterSpacing: "0.15em",
-                          opacity: 0,
-                          transition: "opacity 0.3s ease 0.05s"
-                        }}
-                          /* We rely on CSS gallery-img-wrap:hover via globals.css */
-                        >
-                          {img.category}
-                        </div>
-                        {img.caption && (
-                          <p style={{
-                            color: "#fff", fontWeight: 700, fontSize: large ? "1rem" : "0.85rem",
-                            textAlign: "center", letterSpacing: "0.02em"
-                          }}>
-                            {img.caption}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+            {/* Category filter pills + masonry grid — client component for interactivity */}
+            <GalleryGrid images={ALL_IMAGES} />
 
             {/* Inspired CTA inline */}
             <div style={{ textAlign: "center", marginTop: 56 }}>

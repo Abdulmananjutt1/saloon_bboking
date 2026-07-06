@@ -36,6 +36,7 @@ export const api = {
   get:    <T>(path: string, options?: ApiOptions)                   => request<T>(path, { ...options, method: "GET" }),
   post:   <T>(path: string, body?: unknown, options?: ApiOptions)   => request<T>(path, { ...options, method: "POST",  body }),
   patch:  <T>(path: string, body?: unknown, options?: ApiOptions)   => request<T>(path, { ...options, method: "PATCH", body }),
+  put:    <T>(path: string, body?: unknown, options?: ApiOptions)   => request<T>(path, { ...options, method: "PUT",   body }),
   delete: <T>(path: string, options?: ApiOptions)                   => request<T>(path, { ...options, method: "DELETE" }),
 };
 
@@ -57,6 +58,8 @@ export const bookingsApi = {
   },
   getById:      (id: string)            => api.get(`/bookings/${id}`),
   create:       (body: unknown)         => api.post("/bookings", body),
+  createForUser: (body: unknown, token: string) =>
+    api.post("/bookings/admin", body, { headers: { Authorization: `Bearer ${token}` } }),
   updateStatus: (id: string, status: string) => api.patch(`/bookings/${id}`, { status }),
   delete:       (id: string)            => api.delete(`/bookings/${id}`),
 };
@@ -78,6 +81,8 @@ export const clientsApi = {
 export const authApi = {
   login:    (body: unknown) => api.post("/auth/login",    body),
   register: (body: unknown) => api.post("/auth/register", body),
+  updateProfile: (body: { name: string; phone: string }, token: string) =>
+    api.patch("/auth/profile", body, { headers: { Authorization: `Bearer ${token}` } }),
 };
 
 export const chatApi = {
@@ -88,17 +93,60 @@ export const chatApi = {
 };
 
 export const servicesApi = {
-  getAll:  ()            => api.get("/services"),
-  getById: (id: string)  => api.get(`/services/${id}`),
+  getAll:    ()                           => api.get("/services"),
+  getAllAdmin: ()                          => api.get("/services/all"),
+  getById:   (id: string)                 => api.get(`/services/${id}`),
+  create:    (body: unknown)              => api.post("/services", body),
+  update:    (id: string, body: unknown)  => api.patch(`/services/${id}`, body),
+  delete:    (id: string)                 => api.delete(`/services/${id}`),
 };
 
 export const stylistsApi = {
-  getAll:  ()            => api.get("/stylists"),
-  getById: (id: string)  => api.get(`/stylists/${id}`),
+  getAll:            ()                           => api.get("/stylists"),
+  getById:           (id: string)                 => api.get(`/stylists/${id}`),
+  create:            (body: unknown)              => api.post("/stylists", body),
+  update:            (id: string, body: unknown)  => api.patch(`/stylists/${id}`, body),
+  delete:            (id: string)                 => api.delete(`/stylists/${id}`),
+  getAvailability:   (id: string)                 => api.get(`/stylists/${id}/availability`),
+  saveAvailability:  (id: string, schedule: unknown) =>
+    api.put(`/stylists/${id}/availability`, { schedule }),
 };
 
 export const pushApi = {
   getVapidKey:   ()                           => api.get<{ success: boolean; publicKey: string }>("/push/vapid-key"),
   subscribe:     (body: unknown)              => api.post("/push/subscribe", body),
   unsubscribe:   (endpoint: string)           => api.delete("/push/unsubscribe", { body: { endpoint } }),
+};
+
+export const settingsApi = {
+  getAll:  ()                              => api.get("/settings"),
+  getKey:  (key: string)                   => api.get(`/settings/${key}`),
+  setKey:  (key: string, value: unknown)   => api.put(`/settings/${key}`, { value }),
+  patch:   (data: Record<string, unknown>) => api.patch("/settings", data),
+};
+
+export const usersApi = {
+  getAll: (token: string) =>
+    api.get<{ success: boolean; data: { id: string; name: string; email: string; phone: string }[] }>(
+      "/auth/users",
+      { headers: { Authorization: `Bearer ${token}` } }
+    ),
+};
+
+export const payrollApi = {
+  getInvoices:  (stylistId?: string, status?: string, token?: string) => {
+    const p = new URLSearchParams();
+    if (stylistId) p.set("stylistId", stylistId);
+    if (status && status !== "all") p.set("status", status);
+    const qs = p.toString();
+    return api.get(`/payroll${qs ? `?${qs}` : ""}`, token ? { headers: { Authorization: `Bearer ${token}` } } : undefined);
+  },
+  getStylists:  (token?: string)                             => api.get("/payroll/stylists", token ? { headers: { Authorization: `Bearer ${token}` } } : undefined),
+  getById:      (id: string)                                 => api.get(`/payroll/${id}`),
+  generate:     (body: unknown, token: string)               => api.post("/payroll", body, { headers: { Authorization: `Bearer ${token}` } }),
+  updateStatus: (id: string, status: string, token: string)  =>
+    api.patch(`/payroll/${id}`, { status }, { headers: { Authorization: `Bearer ${token}` } }),
+  deleteInvoice:(id: string, token: string)                  => api.delete(`/payroll/${id}`, { headers: { Authorization: `Bearer ${token}` } }),
+  setPayRate:   (stylistId: string, body: unknown, token: string) =>
+    api.put(`/payroll/rate/${stylistId}`, body, { headers: { Authorization: `Bearer ${token}` } }),
 };

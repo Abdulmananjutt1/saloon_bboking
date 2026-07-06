@@ -3,10 +3,11 @@ import Image from "next/image";
 import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import FaqAccordion from "@/components/FaqAccordion";
 import { ROUTES, APP_PHONE, APP_EMAIL, APP_ADDRESS, APP_HOURS } from "@/constants";
 import {
   Phone, Mail, MapPin, Clock, MessageSquare,
-  Send, Check, Facebook, Instagram, Youtube,
+  Send, Facebook, Instagram, Youtube,
   Twitter, Scissors
 } from "lucide-react";
 
@@ -48,7 +49,7 @@ export default function ContactPage() {
 
           {/* Content */}
           <div className="sal-container" style={{ position: "relative", paddingTop: 120, paddingBottom: 80, width: "100%" }}>
-            <div style={{ maxWidth: 720 }}>
+            <div className="hero-content" style={{ maxWidth: 720 }}>
               {/* Top badge */}
               <div className="sal-glass-gold anim-up" style={{
                 display: "inline-flex", alignItems: "center", gap: 8,
@@ -72,7 +73,7 @@ export default function ContactPage() {
 
               {/* Quick contact chips */}
               <div className="anim-up anim-d4" style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
-                <a href={`tel:${APP_PHONE}`} className="sal-glass" style={{
+                <a href={`tel:${APP_PHONE}`} className="sal-glass hero-chip" style={{
                   display: "inline-flex", alignItems: "center", gap: 10,
                   padding: "12px 20px", borderRadius: 12,
                   textDecoration: "none", color: "var(--text-primary)",
@@ -81,7 +82,7 @@ export default function ContactPage() {
                   <Phone style={{ width: 16, height: 16, color: "var(--gold)" }} />
                   Call Now
                 </a>
-                <a href={`mailto:${APP_EMAIL}`} className="sal-glass" style={{
+                <a href={`mailto:${APP_EMAIL}`} className="sal-glass hero-chip" style={{
                   display: "inline-flex", alignItems: "center", gap: 10,
                   padding: "12px 20px", borderRadius: 12,
                   textDecoration: "none", color: "var(--text-primary)",
@@ -158,87 +159,157 @@ export default function ContactPage() {
                 </form>
               </div>
 
-              {/* Contact Info & Map */}
-              <div>
-                <h2 className="sal-h2" style={{ marginBottom: 32 }}>Visit Our Salon</h2>
+              {/* Contact Info & Social */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
 
-                {/* Contact cards */}
-                <div style={{ display: "flex", flexDirection: "column", gap: 16, marginBottom: 40 }}>
+                {/* Section header */}
+                <div style={{ marginBottom: 28 }}>
+                  <span className="sal-eyebrow">Find Us</span>
+                  <h2 className="sal-h2" style={{ marginBottom: 8 }}>Visit Our <span className="text-gold">Salon</span></h2>
+                  <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
+                    We&apos;d love to see you in person — or reach out any way you prefer.
+                  </p>
+                </div>
+
+                {/* Contact cards — 2×2 grid */}
+                <div style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: 14,
+                  marginBottom: 28
+                }}>
                   {[
                     {
                       icon: MapPin,
-                      title: "Our Location",
-                      content: APP_ADDRESS,
+                      label: "Location",
+                      value: APP_ADDRESS,
                       action: "View on Maps",
-                      href: "https://maps.google.com/?q=Plot+45+F-7+Markaz+Islamabad"
+                      href: "https://maps.google.com/?q=Plot+45+F-7+Markaz+Islamabad",
+                      accent: "var(--gold)"
                     },
                     {
                       icon: Phone,
-                      title: "Call Us",
-                      content: APP_PHONE,
+                      label: "Call Us",
+                      value: APP_PHONE,
                       action: "Call Now",
-                      href: `tel:${APP_PHONE}`
+                      href: `tel:${APP_PHONE}`,
+                      accent: "var(--gold)"
                     },
                     {
                       icon: Mail,
-                      title: "Email",
-                      content: APP_EMAIL,
+                      label: "Email",
+                      value: APP_EMAIL,
                       action: "Send Email",
-                      href: `mailto:${APP_EMAIL}`
+                      href: `mailto:${APP_EMAIL}`,
+                      accent: "var(--gold)"
                     },
                     {
                       icon: Clock,
-                      title: "Hours",
-                      content: APP_HOURS,
+                      label: "Hours",
+                      value: APP_HOURS,
                       action: "Book Now",
-                      href: ROUTES.BOOK
+                      href: ROUTES.BOOK,
+                      accent: "var(--gold)"
                     },
                   ].map((item, i) => (
-                    <div key={i} className="sal-card" style={{ padding: 20, display: "flex", alignItems: "flex-start", gap: 16 }}>
+                    <a
+                      key={i}
+                      href={item.href}
+                      className="contact-info-card"
+                      style={{ textDecoration: "none" }}
+                    >
+                      {/* Gold top bar */}
                       <div style={{
-                        width: 44, height: 44, borderRadius: 10,
-                        background: "rgba(201,151,59,0.1)", border: "1px solid rgba(201,151,59,0.2)",
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        flexShrink: 0
-                      }}>
-                        <item.icon style={{ width: 18, height: 18, color: "var(--gold)" }} />
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <h3 style={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.9rem", marginBottom: 4 }}>
-                          {item.title}
-                        </h3>
-                        <p style={{ fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.6, marginBottom: 8 }}>
-                          {item.content}
+                        height: 3,
+                        background: "var(--grad-gold-btn)",
+                        borderRadius: "var(--r-lg) var(--r-lg) 0 0",
+                        opacity: 0,
+                        transition: "opacity 0.3s ease"
+                      }} className="contact-card-bar" />
+
+                      <div style={{ padding: "20px 20px 18px" }}>
+                        {/* Icon */}
+                        <div style={{
+                          width: 46, height: 46, borderRadius: 12,
+                          background: "linear-gradient(135deg, rgba(201,151,59,0.15) 0%, rgba(201,151,59,0.05) 100%)",
+                          border: "1px solid rgba(201,151,59,0.25)",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          marginBottom: 14,
+                          transition: "all 0.3s ease"
+                        }} className="contact-card-icon">
+                          <item.icon style={{ width: 19, height: 19, color: "var(--gold)" }} />
+                        </div>
+
+                        {/* Label */}
+                        <p style={{
+                          fontSize: "0.65rem", fontWeight: 700,
+                          textTransform: "uppercase", letterSpacing: "0.18em",
+                          color: "var(--text-muted)", marginBottom: 5
+                        }}>
+                          {item.label}
                         </p>
-                        <a href={item.href} style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--gold)", textDecoration: "none" }}>
-                          {item.action} →
-                        </a>
+
+                        {/* Value */}
+                        <p style={{
+                          fontSize: "0.8rem", fontWeight: 600,
+                          color: "var(--text-primary)", lineHeight: 1.5,
+                          marginBottom: 12
+                        }}>
+                          {item.value}
+                        </p>
+
+                        {/* Action link */}
+                        <span style={{
+                          display: "inline-flex", alignItems: "center", gap: 5,
+                          fontSize: "0.7rem", fontWeight: 700,
+                          color: "var(--gold)", letterSpacing: "0.05em"
+                        }}>
+                          {item.action}
+                          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                            <path d="M2 5h6M5.5 2.5L8 5l-2.5 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        </span>
                       </div>
-                    </div>
+                    </a>
                   ))}
                 </div>
 
-                {/* Social links */}
-                <div>
-                  <h3 style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: 16 }}>Follow Us</h3>
-                  <div style={{ display: "flex", gap: 12 }}>
-                    {[
-                      { icon: Facebook, label: "Facebook", color: "#1877F2" },
-                      { icon: Instagram, label: "Instagram", color: "#E4405F" },
-                      { icon: Twitter, label: "Twitter", color: "#1DA1F2" },
-                      { icon: Youtube, label: "YouTube", color: "#FF0000" },
-                    ].map((social, i) => (
-                      <a key={i} href="#" aria-label={social.label} className="footer-social" style={{
-                        width: 40, height: 40,
-                        background: "var(--bg-card)",
-                        border: "1px solid var(--border-light)",
-                        color: social.color
-                      }}>
-                        <social.icon style={{ width: 18, height: 18 }} />
-                      </a>
-                    ))}
+                {/* Social links — premium style */}
+                <div style={{
+                  padding: "24px 24px 22px",
+                  background: "linear-gradient(135deg, rgba(201,151,59,0.06) 0%, rgba(201,151,59,0.02) 100%)",
+                  border: "1px solid rgba(201,151,59,0.15)",
+                  borderRadius: "var(--r-lg)"
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
+                    <div>
+                      <p style={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.88rem", marginBottom: 3 }}>
+                        Follow Our Journey
+                      </p>
+                      <p style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
+                        Stay inspired with daily transformations
+                      </p>
+                    </div>
+                    <div style={{ display: "flex", gap: 10 }}>
+                      {[
+                        { icon: Facebook,  label: "Facebook",  cls: "social-btn-fb",  href: "#" },
+                        { icon: Instagram, label: "Instagram", cls: "social-btn-ig",  href: "#" },
+                        { icon: Twitter,   label: "Twitter",   cls: "social-btn-tw",  href: "#" },
+                        { icon: Youtube,   label: "YouTube",   cls: "social-btn-yt",  href: "#" },
+                      ].map((s, i) => (
+                        <a
+                          key={i}
+                          href={s.href}
+                          aria-label={s.label}
+                          className={`social-brand-btn ${s.cls}`}
+                        >
+                          <s.icon style={{ width: 18, height: 18 }} />
+                        </a>
+                      ))}
+                    </div>
                   </div>
                 </div>
+
               </div>
             </div>
           </div>
@@ -259,55 +330,7 @@ export default function ContactPage() {
               </p>
             </div>
 
-            <div style={{ maxWidth: 800, margin: "0 auto" }}>
-              {[
-                {
-                  q: "Do I need to book in advance?",
-                  a: "Yes, we recommend booking at least 24–48 hours in advance to secure your preferred time and stylist. Walk-ins are welcome based on availability, but appointments are guaranteed."
-                },
-                {
-                  q: "What's your cancellation policy?",
-                  a: "We require 6 hours notice for cancellations or rescheduling. Cancellations within 6 hours may incur a 50% fee. No-shows will be charged full service price."
-                },
-                {
-                  q: "Do you use premium products?",
-                  a: "Absolutely. We exclusively use certified, professional-grade products from Loreal, Wella, Kerastase, and other trusted brands. No cheap alternatives."
-                },
-                {
-                  q: "Is parking available?",
-                  a: "Yes, we have dedicated parking for clients behind the salon building. Valet service is available during peak hours at no extra cost."
-                },
-                {
-                  q: "Can I bring my own product?",
-                  a: "For hygiene and quality assurance, we use only our professional products. If you have specific allergies, please inform us before your appointment."
-                },
-                {
-                  q: "Do you offer bridal packages?",
-                  a: "Yes! Our comprehensive bridal package includes hair, makeup, facial, nails, and pre-wedding consultations. Book at least 2–3 months in advance."
-                },
-              ].map((faq, i) => (
-                <div key={i} className="sal-card" style={{ marginBottom: 16, padding: 24, borderRadius: 16 }}>
-                  <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
-                    <div style={{
-                      width: 24, height: 24, borderRadius: 6,
-                      background: "rgba(201,151,59,0.1)",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      flexShrink: 0
-                    }}>
-                      <Check style={{ width: 12, height: 12, color: "var(--gold)" }} />
-                    </div>
-                    <div>
-                      <h3 style={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.9rem", marginBottom: 8 }}>
-                        {faq.q}
-                      </h3>
-                      <p style={{ fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.7 }}>
-                        {faq.a}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <FaqAccordion />
           </div>
         </section>
 
@@ -326,7 +349,7 @@ export default function ContactPage() {
             pointerEvents: "none"
           }} />
 
-          <div className="sal-container" style={{ position: "relative", textAlign: "center" }}>
+          <div className="sal-container cta-dark-content" style={{ position: "relative", textAlign: "center" }}>
             {/* Icon */}
             <div className="anim-pulse" style={{
               width: 70, height: 70, borderRadius: 20,
