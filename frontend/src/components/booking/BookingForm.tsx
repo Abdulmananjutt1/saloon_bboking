@@ -42,51 +42,31 @@ interface StepDef { n: number; label: string; icon: React.ComponentType<{ style?
 // ── Step Indicator (outside component to avoid re-mount on render) ────────────
 function StepIndicator({ steps, step }: { steps: StepDef[]; step: number }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 36 }}>
+    <div className="booking-steps" role="list" aria-label="Booking progress">
       {steps.map((s, i) => {
         const done = step > s.n;
         const active = step === s.n;
         const Icon = s.icon;
         return (
-          <div key={s.n} style={{ display: "flex", alignItems: "center" }}>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-              <div style={{
-                width: 44, height: 44, borderRadius: "50%",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                transition: "all 0.3s ease",
-                background: done
-                  ? "rgba(52,211,153,0.15)"
-                  : active
-                  ? "var(--grad-gold-btn)"
-                  : "var(--bg-secondary)",
-                border: done
-                  ? "1.5px solid rgba(52,211,153,0.4)"
-                  : active
-                  ? "none"
-                  : "1.5px solid var(--border-light)",
-                boxShadow: active ? "0 4px 20px rgba(201,151,59,0.35)" : "none"
-              }}>
+          <div key={s.n} className="booking-step-wrap" role="listitem">
+            <div className="booking-step-node">
+              <div
+                className={`booking-step-circle${active ? " booking-step-circle--active" : ""}${done ? " booking-step-circle--done" : ""}`}
+              >
                 {done
                   ? <CheckCircle style={{ width: 18, height: 18, color: "#34d399" }} />
                   : <Icon style={{ width: 16, height: 16, color: active ? "#0d0c0a" : "var(--text-muted)", transform: s.n === 1 ? "rotate(45deg)" : "none" }} />
                 }
               </div>
-              <span style={{
-                fontSize: "0.62rem", fontWeight: 700,
-                textTransform: "uppercase", letterSpacing: "0.12em",
-                color: active ? "var(--gold)" : done ? "#34d399" : "var(--text-muted)"
-              }}>
+              <span className={`booking-step-label${active ? " booking-step-label--active" : ""}${done ? " booking-step-label--done" : ""}`}>
                 {s.label}
               </span>
             </div>
             {i < steps.length - 1 && (
-              <div style={{
-                width: 60, height: 1.5, marginBottom: 20, marginInline: 6,
-                background: step > s.n
-                  ? "linear-gradient(to right, rgba(52,211,153,0.5), rgba(52,211,153,0.2))"
-                  : "var(--border-light)",
-                transition: "background 0.4s ease"
-              }} />
+              <div
+                className={`booking-step-line${step > s.n ? " booking-step-line--done" : ""}`}
+                aria-hidden
+              />
             )}
           </div>
         );
@@ -101,37 +81,23 @@ function NavButtons({ step, loading, nextDisabled, onNext, onBack, submitMode }:
   onNext?: () => void; onBack?: () => void; submitMode?: boolean;
 }) {
   return (
-    <div style={{ display: "flex", justifyContent: step === 1 ? "flex-end" : "space-between", marginTop: 28 }}>
+    <div className={`booking-nav-buttons${step === 1 ? " booking-nav-buttons--end" : ""}`}>
       {step > 1 && (
-        <button type="button" onClick={onBack} style={{
-          display: "flex", alignItems: "center", gap: 6,
-          padding: "11px 22px", borderRadius: 11,
-          background: "var(--bg-secondary)", border: "1px solid var(--border-light)",
-          color: "var(--text-secondary)", fontSize: "0.82rem", fontWeight: 600, cursor: "pointer"
-        }}>
-          <ChevronLeft style={{ width: 15, height: 15 }} /> Back
+        <button type="button" onClick={onBack} className="booking-btn-back">
+          <ChevronLeft style={{ width: 15, height: 15, flexShrink: 0 }} /> Back
         </button>
       )}
       <button
         type={submitMode ? "submit" : "button"}
         onClick={!submitMode ? onNext : undefined}
         disabled={nextDisabled}
-        style={{
-          display: "flex", alignItems: "center", gap: 7,
-          padding: "12px 28px", borderRadius: 11,
-          background: nextDisabled ? "var(--bg-secondary)" : "var(--grad-gold-btn)",
-          border: nextDisabled ? "1px solid var(--border-light)" : "none",
-          color: nextDisabled ? "var(--text-muted)" : "#0d0c0a",
-          fontSize: "0.82rem", fontWeight: 700, cursor: nextDisabled ? "not-allowed" : "pointer",
-          boxShadow: nextDisabled ? "none" : "0 4px 20px rgba(201,151,59,0.3)",
-          transition: "all 0.2s", opacity: nextDisabled ? 0.5 : 1
-        }}
+        className="booking-btn-next"
       >
         {submitMode
           ? loading
-            ? <><span style={{ width: 14, height: 14, borderRadius: "50%", border: "2px solid rgba(13,12,10,0.3)", borderTopColor: "#0d0c0a", animation: "spin 0.7s linear infinite", display: "inline-block" }} /> Confirming…</>
-            : <><Scissors style={{ width: 14, height: 14, transform: "rotate(45deg)" }} /> Confirm Booking</>
-          : <>Next <ChevronRight style={{ width: 15, height: 15 }} /></>
+            ? <><span className="booking-btn-spinner" /> Confirming…</>
+            : <><Scissors style={{ width: 14, height: 14, flexShrink: 0, transform: "rotate(45deg)" }} /> Confirm Booking</>
+          : <>Next <ChevronRight style={{ width: 15, height: 15, flexShrink: 0 }} /></>
         }
       </button>
     </div>
@@ -463,12 +429,7 @@ export default function BookingForm({ preSelectedService, preSelectedStylist }: 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       <StepIndicator steps={steps} step={step} />
 
-      <div style={{
-        background: "var(--bg-card)",
-        border: "1px solid var(--border-light)",
-        borderRadius: 24, padding: "32px 36px",
-        boxShadow: "var(--shadow-card)"
-      }}>
+      <div className="booking-form-card">
 
         {/* ══ STEP 1 — Service ══ */}
         {step === 1 && (
@@ -488,7 +449,7 @@ export default function BookingForm({ preSelectedService, preSelectedStylist }: 
             ) : (
               <>
                 {/* ── Mode toggle ── */}
-                <div style={{ display: "flex", gap: 10, marginBottom: 18 }}>
+                <div className="booking-mode-toggle">
                   <button
                     type="button"
                     onClick={() => { setIsCustomPackage(false); setCustomServices([]); setCustomItems([]); setShowAddItem(false); }}
@@ -586,7 +547,7 @@ export default function BookingForm({ preSelectedService, preSelectedStylist }: 
                 )}
 
                 {/* ── Service grid ── */}
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 12, maxHeight: 480, overflowY: "auto", paddingRight: 4 }}>
+                <div className="booking-service-grid">
                   {filteredServices.map((s) => {
                     const selectedSingle = !isCustomPackage && selectedService === s.id;
                     const selectedCustom = isCustomPackage && customServices.includes(s.id);
@@ -721,7 +682,7 @@ export default function BookingForm({ preSelectedService, preSelectedStylist }: 
                         <p style={{ fontSize: "0.72rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--gold)", marginBottom: 14 }}>
                           Custom Service Details
                         </p>
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 14 }}>
+                        <div className="booking-custom-fields">
                           {/* Name */}
                           <div style={{ gridColumn: "1 / -1" }}>
                             <label style={{ display: "block", fontSize: "0.65rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--text-muted)", marginBottom: 6 }}>
@@ -872,7 +833,7 @@ export default function BookingForm({ preSelectedService, preSelectedStylist }: 
               <h2 style={{ fontSize: "1.05rem", fontWeight: 700, color: "var(--text-primary)" }}>Choose a Stylist</h2>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 14 }}>
+            <div className="booking-stylist-grid">
               {STYLISTS.map((s) => {
                 const selected = selectedStylist === s.id;
                 const unavail = !s.available;
@@ -1084,7 +1045,7 @@ export default function BookingForm({ preSelectedService, preSelectedStylist }: 
             </div>
 
             {/* Form fields */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16, marginBottom: 16 }}>
+            <div className="booking-fields-grid">
               {[
                 { label: "Full Name",     key: "name",  type: "text",  placeholder: "Fatima Khan",      inputMode: undefined as React.HTMLAttributes<HTMLInputElement>["inputMode"] },
                 { label: "Email Address", key: "email", type: "email", placeholder: "you@email.com",     inputMode: undefined as React.HTMLAttributes<HTMLInputElement>["inputMode"] },

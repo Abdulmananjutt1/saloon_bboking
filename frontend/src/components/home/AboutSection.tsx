@@ -12,18 +12,11 @@ const FEATURES = [
 
 export default function AboutSection() {
   return (
-    <section style={{ background: "var(--bg-secondary)", padding: "100px 0" }}>
+    <section style={{ background: "var(--bg-secondary)", padding: "100px 0", overflow: "hidden" }}>
       <div className="sal-container">
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
-            gap: 64,
-            alignItems: "center",
-          }}
-        >
+        <div className="sal-grid-2col" style={{ gap: 64, alignItems: "center" }}>
           <div className="reveal-left" style={{ position: "relative" }}>
-            <div style={{ position: "relative", borderRadius: 24, overflow: "hidden", height: 500 }}>
+            <div style={{ position: "relative", borderRadius: 24, overflow: "hidden", height: 500, maxHeight: "min(500px, 70vw)" }}>
               <Image
                 src="https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=800&q=80"
                 alt="Our salon"
@@ -40,7 +33,7 @@ export default function AboutSection() {
               />
             </div>
             <div
-              className="sal-glass-gold"
+              className="sal-glass-gold about-float-card"
               style={{
                 position: "absolute",
                 bottom: -20,

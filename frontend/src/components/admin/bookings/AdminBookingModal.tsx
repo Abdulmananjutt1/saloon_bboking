@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { X, User, Scissors, Calendar, CheckCircle, ChevronRight, ChevronLeft, Clock, Search, Star, Award, Package, Plus, AlertCircle, Sparkles } from "lucide-react";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { X, Scissors, CheckCircle, ChevronRight, ChevronLeft, Clock, Star, Package, Plus, Sparkles } from "lucide-react";
 import { TIME_SLOTS } from "@/constants";
 import { formatPrice, formatDuration, getTodayDate } from "@/lib/utils";
 import { servicesApi, stylistsApi, bookingsApi, usersApi } from "@/lib/api";
@@ -51,6 +51,14 @@ export default function AdminBookingModal({ open, onClose, onCreated }: Props) {
   const [customItemErrors, setCustomItemErrors] = useState({ name: "", price: "", duration: "" });
   const [showAddItem,      setShowAddItem]      = useState(false);
 
+  const resetForm = useCallback(() => {
+    setStep(1); setSelectedUser(""); setUserSearch(""); setSelectedService("");
+    setSelectedStylist(""); setSelectedDate(getTodayDate()); setSelectedTime("");
+    setNotes(""); setErrors({}); setServiceSearch(""); setIsCustomPackage(false);
+    setCustomServices([]); setCustomItems([]); setCustomItemDraft({ name: "", price: "", duration: "" });
+    setCustomItemErrors({ name: "", price: "", duration: "" }); setShowAddItem(false);
+  }, []);
+
   // Load data when modal opens
   useEffect(() => {
     if (!open) return;
@@ -71,14 +79,6 @@ export default function AdminBookingModal({ open, onClose, onCreated }: Props) {
     }).finally(() => setDataLoading(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
-
-  function resetForm() {
-    setStep(1); setSelectedUser(""); setUserSearch(""); setSelectedService("");
-    setSelectedStylist(""); setSelectedDate(getTodayDate()); setSelectedTime("");
-    setNotes(""); setErrors({}); setServiceSearch(""); setIsCustomPackage(false);
-    setCustomServices([]); setCustomItems([]); setCustomItemDraft({ name: "", price: "", duration: "" });
-    setCustomItemErrors({ name: "", price: "", duration: "" }); setShowAddItem(false);
-  }
 
   // Derived
   const service  = services.find((s) => s.id === selectedService);
@@ -188,19 +188,94 @@ export default function AdminBookingModal({ open, onClose, onCreated }: Props) {
 
   // ── RENDER ────────────────────────────────────────────────────────────────
   return (
-    <div style={overlay} onClick={(e) => e.target === e.currentTarget && onClose()}>
+    <div className="admin-booking-overlay" style={overlay} onClick={(e) => e.target === e.currentTarget && onClose()}>
       <style>{`
         .admin-booking-modal::-webkit-scrollbar { width: 5px; }
         .admin-booking-modal::-webkit-scrollbar-track { background: transparent; }
         .admin-booking-modal::-webkit-scrollbar-thumb { background: rgba(201,151,59,0.35); border-radius: 99px; }
         .admin-booking-modal::-webkit-scrollbar-thumb:hover { background: rgba(201,151,59,0.6); }
         @keyframes spin { to { transform: rotate(360deg); } }
+        @media (max-width: 768px) {
+          .admin-booking-overlay {
+            align-items: flex-end !important;
+            padding: 10px !important;
+          }
+          .admin-booking-modal {
+            max-width: none !important;
+            max-height: calc(100dvh - 20px) !important;
+            border-radius: 18px !important;
+          }
+          .admin-booking-header {
+            padding: 18px 16px 14px !important;
+            gap: 12px;
+          }
+          .admin-booking-header h2 {
+            font-size: 1rem !important;
+          }
+          .admin-booking-steps {
+            padding: 12px 16px 0 !important;
+            overflow-x: auto;
+            scrollbar-width: none;
+          }
+          .admin-booking-steps::-webkit-scrollbar {
+            display: none;
+          }
+          .admin-booking-step-label {
+            font-size: 0.68rem !important;
+          }
+          .admin-booking-body {
+            padding: 18px 16px !important;
+          }
+          .admin-booking-mode-switch {
+            flex-direction: column;
+          }
+          .admin-booking-mode-switch button {
+            width: 100%;
+            justify-content: center;
+          }
+          .admin-booking-grid {
+            grid-template-columns: 1fr !important;
+            max-height: 45dvh !important;
+          }
+          .admin-booking-custom-summary {
+            flex-direction: column;
+            gap: 6px;
+          }
+          .admin-booking-custom-inputs {
+            grid-template-columns: 1fr !important;
+          }
+          .admin-booking-date {
+            width: 100%;
+            max-width: none !important;
+          }
+          .admin-booking-times {
+            display: grid !important;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+          .admin-booking-times button {
+            width: 100%;
+          }
+          .admin-booking-nav {
+            flex-direction: column-reverse;
+            align-items: stretch;
+          }
+          .admin-booking-nav button {
+            width: 100%;
+            justify-content: center;
+          }
+          .admin-booking-user-card {
+            align-items: flex-start !important;
+          }
+          .admin-booking-user-card p {
+            word-break: break-word;
+          }
+        }
       `}</style>
       <ToastContainer toasts={toasts} onRemove={remove} />
       <div style={modal} className="admin-booking-modal">
 
         {/* Header */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "22px 28px 18px", borderBottom: "1px solid var(--border-light)" }}>
+        <div className="admin-booking-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "22px 28px 18px", borderBottom: "1px solid var(--border-light)" }}>
           <div>
             <h2 style={{ fontSize: "1.1rem", fontWeight: 800, color: "var(--text-primary)" }}>Create Booking</h2>
             <p style={{ fontSize: "0.74rem", color: "var(--text-muted)", marginTop: 2 }}>Book an appointment on behalf of a client</p>
@@ -211,21 +286,21 @@ export default function AdminBookingModal({ open, onClose, onCreated }: Props) {
         </div>
 
         {/* Step indicator */}
-        <div style={{ display: "flex", gap: 0, padding: "18px 28px 0", borderBottom: "1px solid var(--border-light)" }}>
+        <div className="admin-booking-steps" style={{ display: "flex", gap: 0, padding: "18px 28px 0", borderBottom: "1px solid var(--border-light)" }}>
           {steps.map((s, i) => (
             <div key={s.n} style={{ display: "flex", alignItems: "center" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: "8px 8px 0 0", background: step === s.n ? "rgba(201,151,59,0.08)" : "transparent", borderBottom: step === s.n ? "2px solid var(--gold)" : "2px solid transparent" }}>
                 <div style={{ width: 22, height: 22, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: step > s.n ? "rgba(52,211,153,0.15)" : step === s.n ? "var(--grad-gold-btn)" : "var(--bg-secondary)", border: step > s.n ? "1px solid rgba(52,211,153,0.3)" : step === s.n ? "none" : "1px solid var(--border-light)", fontSize: "0.65rem", fontWeight: 800, color: step > s.n ? "#34d399" : step === s.n ? "#0d0c0a" : "var(--text-muted)" }}>
                   {step > s.n ? "✓" : s.n}
                 </div>
-                <span style={{ fontSize: "0.74rem", fontWeight: 700, color: step === s.n ? "var(--gold)" : step > s.n ? "#34d399" : "var(--text-muted)" }}>{s.label}</span>
+                <span className="admin-booking-step-label" style={{ fontSize: "0.74rem", fontWeight: 700, color: step === s.n ? "var(--gold)" : step > s.n ? "#34d399" : "var(--text-muted)" }}>{s.label}</span>
               </div>
               {i < steps.length - 1 && <div style={{ width: 20, height: 1, background: "var(--border-light)" }} />}
             </div>
           ))}
         </div>
 
-        <div style={{ padding: "24px 28px" }}>
+        <div className="admin-booking-body" style={{ padding: "24px 28px" }}>
           {dataLoading ? (
             <div style={{ display: "flex", justifyContent: "center", padding: "48px 0" }}>
               <span style={{ width: 32, height: 32, borderRadius: "50%", border: "3px solid rgba(201,151,59,0.15)", borderTopColor: "var(--gold)", animation: "spin 0.8s linear infinite", display: "inline-block" }} />
@@ -250,7 +325,7 @@ export default function AdminBookingModal({ open, onClose, onCreated }: Props) {
                     ) : filteredUsers.map((u) => {
                       const sel = selectedUser === u.id;
                       return (
-                        <button key={u.id} onClick={() => setSelectedUser(u.id)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 10, border: `1.5px solid ${sel ? "rgba(201,151,59,0.5)" : "var(--border-light)"}`, background: sel ? "rgba(201,151,59,0.06)" : "var(--bg-secondary)", cursor: "pointer", textAlign: "left" }}>
+                        <button className="admin-booking-user-card" key={u.id} onClick={() => setSelectedUser(u.id)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 10, border: `1.5px solid ${sel ? "rgba(201,151,59,0.5)" : "var(--border-light)"}`, background: sel ? "rgba(201,151,59,0.06)" : "var(--bg-secondary)", cursor: "pointer", textAlign: "left" }}>
                           <div style={{ width: 36, height: 36, borderRadius: "50%", background: sel ? "var(--grad-gold-btn)" : "var(--bg-card)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.82rem", fontWeight: 800, color: sel ? "#0d0c0a" : "var(--text-muted)", flexShrink: 0 }}>{u.name.charAt(0)}</div>
                           <div>
                             <p style={{ fontSize: "0.84rem", fontWeight: 700, color: "var(--text-primary)" }}>{u.name}</p>
@@ -267,7 +342,7 @@ export default function AdminBookingModal({ open, onClose, onCreated }: Props) {
               {/* ── Step 2: Select Service ── */}
               {step === 2 && (
                 <div>
-                  <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
+                  <div className="admin-booking-mode-switch" style={{ display: "flex", gap: 10, marginBottom: 14 }}>
                     <button type="button" onClick={() => { setIsCustomPackage(false); setCustomServices([]); setCustomItems([]); }} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 10, fontSize: "0.78rem", fontWeight: 700, cursor: "pointer", border: !isCustomPackage ? "1.5px solid rgba(201,151,59,0.6)" : "1.5px solid var(--border-light)", background: !isCustomPackage ? "rgba(201,151,59,0.1)" : "var(--bg-secondary)", color: !isCustomPackage ? "var(--gold)" : "var(--text-muted)" }}>
                       <Scissors style={{ width: 12, height: 12, transform: "rotate(45deg)" }} /> Single Service
                     </button>
@@ -277,12 +352,12 @@ export default function AdminBookingModal({ open, onClose, onCreated }: Props) {
                   </div>
                   <input type="text" placeholder="Search services…" value={serviceSearch} onChange={(e) => setServiceSearch(e.target.value)} style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1px solid var(--border-light)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: "0.84rem", outline: "none", marginBottom: 12, boxSizing: "border-box" }} />
                   {isCustomPackage && totalCustomCount > 0 && (
-                    <div style={{ background: "rgba(201,151,59,0.08)", border: "1px solid rgba(201,151,59,0.25)", borderRadius: 10, padding: "10px 14px", marginBottom: 12, display: "flex", justifyContent: "space-between" }}>
+                    <div className="admin-booking-custom-summary" style={{ background: "rgba(201,151,59,0.08)", border: "1px solid rgba(201,151,59,0.25)", borderRadius: 10, padding: "10px 14px", marginBottom: 12, display: "flex", justifyContent: "space-between" }}>
                       <span style={{ fontSize: "0.76rem", fontWeight: 700, color: "var(--gold)" }}>{totalCustomCount} item{totalCustomCount > 1 ? "s" : ""} selected · {formatDuration(customPackageDuration)}</span>
                       <span style={{ fontSize: "0.88rem", fontWeight: 800, color: "var(--gold)" }}>{formatPrice(customPackageTotal)}</span>
                     </div>
                   )}
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px,1fr))", gap: 10, maxHeight: 300, overflowY: "auto" }}>
+                  <div className="admin-booking-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px,1fr))", gap: 10, maxHeight: 300, overflowY: "auto" }}>
                     {filteredServices.map((s) => {
                       const selSingle = !isCustomPackage && selectedService === s.id;
                       const selCustom = isCustomPackage && customServices.includes(s.id);
@@ -311,7 +386,7 @@ export default function AdminBookingModal({ open, onClose, onCreated }: Props) {
                         <div style={{ padding: "14px", borderRadius: 12, background: "var(--bg-secondary)", border: "1px solid var(--border-light)", marginBottom: 10, display: "flex", flexDirection: "column", gap: 10 }}>
                           <input className="sal-input" placeholder="Service name" value={customItemDraft.name} onChange={(e) => setCustomItemDraft((d) => ({ ...d, name: e.target.value }))} />
                           {customItemErrors.name && <p style={{ fontSize: "0.7rem", color: "#f87171", marginTop: -6 }}>{customItemErrors.name}</p>}
-                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                          <div className="admin-booking-custom-inputs" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                             <div>
                               <input className="sal-input" type="number" placeholder="Price (PKR)" value={customItemDraft.price} onChange={(e) => setCustomItemDraft((d) => ({ ...d, price: e.target.value }))} />
                               {customItemErrors.price && <p style={{ fontSize: "0.7rem", color: "#f87171", marginTop: 2 }}>{customItemErrors.price}</p>}
@@ -342,7 +417,7 @@ export default function AdminBookingModal({ open, onClose, onCreated }: Props) {
               {step === 3 && (
                 <div>
                   <p style={{ fontSize: "0.72rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--text-muted)", marginBottom: 14 }}>Select Stylist</p>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px,1fr))", gap: 10, maxHeight: 360, overflowY: "auto" }}>
+                  <div className="admin-booking-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px,1fr))", gap: 10, maxHeight: 360, overflowY: "auto" }}>
                     {stylists.filter((s) => s.available && s.isActive).map((s) => {
                       const sel = selectedStylist === s.id;
                       return (
@@ -370,11 +445,11 @@ export default function AdminBookingModal({ open, onClose, onCreated }: Props) {
                 <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
                   <div>
                     <label style={{ display: "block", fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.15em", color: "var(--text-muted)", marginBottom: 10 }}>Appointment Date</label>
-                    <input type="date" value={selectedDate} min={getTodayDate()} onChange={(e) => { setSelectedDate(e.target.value); setSelectedTime(""); }} style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid var(--border-light)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: "0.86rem", outline: "none", maxWidth: 240 }} />
+                    <input className="admin-booking-date" type="date" value={selectedDate} min={getTodayDate()} onChange={(e) => { setSelectedDate(e.target.value); setSelectedTime(""); }} style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid var(--border-light)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: "0.86rem", outline: "none", maxWidth: 240 }} />
                   </div>
                   <div>
                     <label style={{ display: "block", fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.15em", color: "var(--text-muted)", marginBottom: 10 }}>Time Slot</label>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                    <div className="admin-booking-times" style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                       {TIME_SLOTS.map((slot) => {
                         const sel = selectedTime === slot;
                         return (
@@ -406,7 +481,7 @@ export default function AdminBookingModal({ open, onClose, onCreated }: Props) {
               )}
 
               {/* ── Nav buttons ── */}
-              <div style={{ display: "flex", justifyContent: step === 1 ? "flex-end" : "space-between", marginTop: 28, gap: 10 }}>
+              <div className="admin-booking-nav" style={{ display: "flex", justifyContent: step === 1 ? "flex-end" : "space-between", marginTop: 28, gap: 10 }}>
                 {step > 1 && (
                   <button type="button" onClick={() => setStep((s) => (s - 1) as Step)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "10px 20px", borderRadius: 10, border: "1px solid var(--border-light)", background: "transparent", color: "var(--text-secondary)", fontSize: "0.82rem", fontWeight: 600, cursor: "pointer" }}>
                     <ChevronLeft style={{ width: 14, height: 14 }} /> Back

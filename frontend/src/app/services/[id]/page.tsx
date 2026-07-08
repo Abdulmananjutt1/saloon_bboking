@@ -34,7 +34,7 @@ export default async function ServiceDetailPage({ params }: Props) {
   return (
     <>
       <Navbar />
-      <main style={{ background: "var(--bg-primary)" }}>
+      <main className="site-main" style={{ background: "var(--bg-primary)", width: "100%", maxWidth: "100%", overflowX: "hidden" }}>
         {/* ══════════════════════════════════════
             HERO SECTION
         ══════════════════════════════════════ */}

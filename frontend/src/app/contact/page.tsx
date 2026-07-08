@@ -21,7 +21,7 @@ export default function ContactPage() {
   return (
     <>
       <Navbar />
-      <main style={{ background: "var(--bg-primary)" }}>
+      <main className="site-main" style={{ background: "var(--bg-primary)", width: "100%", maxWidth: "100%", overflowX: "hidden" }}>
         <PageHero
           image="https://images.unsplash.com/photo-1560066984-138dadb4c035?w=1600&q=80"
           imageAlt="Contact Us"
@@ -54,7 +54,7 @@ export default function ContactPage() {
 
         <section style={{ background: "var(--bg-secondary)", padding: "100px 0" }}>
           <div className="sal-container">
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 40 }}>
+            <div className="sal-grid-2col" style={{ gap: 40 }}>
               <div className="sal-glass" style={{ padding: 40, borderRadius: 20 }}>
                 <ContactForm />
               </div>

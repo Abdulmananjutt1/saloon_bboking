@@ -37,7 +37,7 @@ export default async function AboutPage() {
   return (
     <>
       <Navbar />
-      <main style={{ background: "var(--bg-primary)" }}>
+      <main className="site-main" style={{ background: "var(--bg-primary)", width: "100%", maxWidth: "100%", overflowX: "hidden" }}>
         <PageHero
           image="https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=1600&q=80"
           imageAlt="Our Salon Interior"
@@ -54,9 +54,9 @@ export default async function AboutPage() {
           align="left"
         />
 
-        <section style={{ background: "var(--bg-secondary)", padding: "100px 0" }}>
+        <section style={{ background: "var(--bg-secondary)", padding: "100px 0", overflow: "hidden" }}>
           <div className="sal-container">
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 80, alignItems: "center" }}>
+            <div className="sal-grid-2col" style={{ gap: 80, alignItems: "center" }}>
               <div>
                 <span className="sal-eyebrow">Our Story</span>
                 <h2 className="sal-h2" style={{ marginBottom: 16, lineHeight: 1.15 }}>
@@ -81,8 +81,8 @@ export default async function AboutPage() {
                 </div>
               </div>
 
-              <div style={{ position: "relative" }}>
-                <div style={{ position: "relative", borderRadius: 24, overflow: "hidden", height: 500 }}>
+              <div style={{ position: "relative", overflow: "hidden" }}>
+                <div style={{ position: "relative", borderRadius: 24, overflow: "hidden", height: 500, maxHeight: "min(500px, 70vw)" }}>
                   <Image
                     src="https://images.unsplash.com/photo-1560066984-138dadb4c035?w=800&q=80"
                     alt="Our Salon Journey"
@@ -92,7 +92,7 @@ export default async function AboutPage() {
                   />
                   <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(10,9,7,0.5) 0%, transparent 60%)" }} />
                 </div>
-                <div className="sal-glass-gold" style={{ position: "absolute", bottom: -20, left: -20, padding: "16px 20px", borderRadius: 16, boxShadow: "0 16px 40px rgba(0,0,0,0.4)" }}>
+                <div className="sal-glass-gold about-float-card" style={{ position: "absolute", bottom: -20, left: -20, padding: "16px 20px", borderRadius: 16, boxShadow: "0 16px 40px rgba(0,0,0,0.4)" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                     <div style={{ width: 44, height: 44, borderRadius: 12, background: "var(--grad-gold-btn)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                       <Award style={{ width: 22, height: 22, color: "#0d0c0a" }} />
@@ -119,7 +119,7 @@ export default async function AboutPage() {
                 Beyond technical skill, we build relationships and trust with every client who walks through our doors.
               </p>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 30 }}>
+            <div className="sal-grid" style={{ gap: 30 }}>
               {VALUES.map((value, i) => (
                 <div key={i} className="sal-card" style={{ padding: 32, textAlign: "center" }}>
                   <div style={{ width: 60, height: 60, borderRadius: 16, background: "rgba(201,151,59,0.1)", border: "1px solid rgba(201,151,59,0.2)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>

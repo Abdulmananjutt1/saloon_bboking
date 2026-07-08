@@ -23,7 +23,7 @@ export default async function StylistsPage() {
   return (
     <>
       <Navbar />
-      <main style={{ background: "var(--bg-primary)" }}>
+      <main className="site-main" style={{ background: "var(--bg-primary)", width: "100%", maxWidth: "100%", overflowX: "hidden" }}>
         <PageHero
           image="https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=1600&q=80"
           imageAlt="Our Team"
@@ -54,7 +54,7 @@ export default async function StylistsPage() {
               className=""
             />
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 28, marginBottom: 60, alignItems: "stretch" }}>
+            <div className="sal-grid" style={{ gap: 28, marginBottom: 60, alignItems: "stretch" }}>
               {available.map((stylist) => (
                 <StylistCardFull key={stylist.id} stylist={stylist} />
               ))}
@@ -65,7 +65,7 @@ export default async function StylistsPage() {
                 <div style={{ marginBottom: 32, textAlign: "center" }}>
                   <span className="sal-eyebrow">Currently On Leave</span>
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 24, opacity: 0.6 }}>
+                <div className="sal-grid" style={{ gap: 24, opacity: 0.6 }}>
                   {unavailable.map((stylist) => (
                     <StylistCardFull key={stylist.id} stylist={stylist} unavailable />
                   ))}

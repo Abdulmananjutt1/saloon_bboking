@@ -19,16 +19,8 @@ export default function GalleryPreviewSection() {
           description="Real transformations from real clients — every cut, color, and style captured here."
         />
 
-        <div
-          className="reveal-stagger"
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
-            gridTemplateRows: "200px 200px",
-            gap: 14,
-          }}
-        >
-          <div className="gallery-img-wrap reveal-child" style={{ gridRow: "1 / 3", gridColumn: "1 / 2" }}>
+        <div className="reveal-stagger gallery-preview-grid">
+          <div className="gallery-img-wrap gallery-preview-hero reveal-child">
             <div style={{ position: "relative", width: "100%", height: "100%" }}>
               <Image src={GALLERY_PREVIEW_IMAGES[0]} alt="Gallery 1" fill className="object-cover" sizes="33vw" />
               <div className="gallery-overlay">

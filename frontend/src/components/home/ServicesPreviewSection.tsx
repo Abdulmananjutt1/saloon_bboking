@@ -23,14 +23,7 @@ export default function ServicesPreviewSection({ services }: ServicesPreviewSect
           description="From classic cuts to luxury bridal packages — everything to make you look and feel your absolute best."
         />
 
-        <div
-          className="reveal-stagger"
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-            gap: 24,
-          }}
-        >
+        <div className="reveal-stagger sal-grid" style={{ gap: 24 }}>
           {services.map((service) => (
             <ServiceCard key={service.id} service={service} />
           ))}

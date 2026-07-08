@@ -10,7 +10,7 @@ const CONTACT_ITEMS = [
 
 export default function ContactInfoCards() {
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 28 }}>
+    <div className="contact-info-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 28 }}>
       {CONTACT_ITEMS.map((item, i) => (
         <a key={i} href={item.href} className="contact-info-card" style={{ textDecoration: "none" }}>
           <div style={{ height: 3, background: "var(--grad-gold-btn)", borderRadius: "var(--r-lg) var(--r-lg) 0 0", opacity: 0, transition: "opacity 0.3s ease" }} className="contact-card-bar" />

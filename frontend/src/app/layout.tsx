@@ -28,8 +28,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${cormorant.variable} ${raleway.variable} h-full`} suppressHydrationWarning>
-      <body className="min-h-full flex flex-col antialiased" style={{ background: "var(--bg-primary)", color: "var(--text-primary)" }}>
+    <html lang="en" className={`${cormorant.variable} ${raleway.variable} h-full overflow-x-hidden`} suppressHydrationWarning>
+      <body className="min-h-full flex flex-col antialiased overflow-x-hidden w-full max-w-full" style={{ background: "var(--bg-primary)", color: "var(--text-primary)" }}>
         <ThemeProvider>
           {children}
         </ThemeProvider>

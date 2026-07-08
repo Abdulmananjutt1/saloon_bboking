@@ -36,14 +36,7 @@ export default function TestimonialsSection({
           )}
         </SectionHeader>
 
-        <div
-          className={animated ? "reveal-stagger" : undefined}
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-            gap: 20,
-          }}
-        >
+        <div className={animated ? "reveal-stagger sal-grid" : "sal-grid"} style={{ gap: 20 }}>
           {reviews.map((review) => (
             <TestimonialCard
               key={review.id}

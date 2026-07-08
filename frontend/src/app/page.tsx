@@ -23,7 +23,7 @@ export default function HomePage() {
     <>
       <ScrollReveal />
       <Navbar />
-      <main style={{ background: "var(--bg-primary)" }}>
+      <main className="site-main" style={{ background: "var(--bg-primary)", width: "100%", maxWidth: "100%", overflowX: "hidden" }}>
         <HomeHero />
         <GoldTicker />
         <AboutSection />

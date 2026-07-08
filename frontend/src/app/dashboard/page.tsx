@@ -6,7 +6,7 @@ import {
   Scissors, CalendarDays,
   MessageSquare, Settings, LogOut, Clock3,
   ChevronRight, ChevronUp, Star, Send, Plus, Wifi, WifiOff,
-  User, Mail, Phone, ShieldAlert, Pencil, Check, X
+  User, Mail, Phone, Pencil, Check, X, Menu
 } from "lucide-react";
 
 import { ROUTES, APP_NAME } from "@/constants";
@@ -19,6 +19,7 @@ import { popSessionToast } from "@/lib/session";
 export default function ClientDashboard() {
   const [activeTab, setActiveTab] = useState<"overview" | "appointments" | "chat" | "settings">("overview");
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const { toasts, toast, remove } = useToast();
 
   // Show toast from sessionStorage (e.g. after login)
@@ -71,6 +72,8 @@ export default function ClientDashboard() {
     if (activeTab === "appointments") {
       markAppointmentsRead();
     }
+    setShowMobileMenu(false);
+    setShowProfileMenu(false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
 
@@ -83,16 +86,24 @@ export default function ClientDashboard() {
   }
 
   return (
-    <div style={{
-      minHeight: "100vh",
+    <div className="client-dashboard-shell" style={{
+      height: "100vh",
       background: "var(--bg-primary)",
       color: "var(--text-primary)",
       fontFamily: "var(--font-geist-sans), 'Inter', sans-serif",
-      display: "flex"
+      display: "flex",
+      overflow: "hidden"
     }}>
       <ToastContainer toasts={toasts} onRemove={remove} />
+      {showMobileMenu && (
+        <button
+          aria-label="Close menu"
+          className="client-mobile-overlay"
+          onClick={() => setShowMobileMenu(false)}
+        />
+      )}
       {/* ── SIDEBAR ── */}
-      <aside style={{
+      <aside className={showMobileMenu ? "client-dashboard-sidebar client-dashboard-sidebar-open" : "client-dashboard-sidebar"} style={{
         width: 260,
         background: "var(--bg-secondary)",
         borderRight: "1px solid var(--border-light)",
@@ -126,7 +137,10 @@ export default function ClientDashboard() {
             return (
               <button
                 key={tab}
-                onClick={() => setActiveTab(tab as typeof activeTab)}
+                onClick={() => {
+                  setActiveTab(tab as typeof activeTab);
+                  setShowMobileMenu(false);
+                }}
                 style={tabBtnStyle(on)}
               >
                 <Icon style={{ width: 15, height: 15, color: on ? "var(--gold)" : "var(--text-muted)", flexShrink: 0 }} />
@@ -240,12 +254,27 @@ export default function ClientDashboard() {
       </aside>
 
       {/* ── MAIN CONTENT ── */}
-      <main style={{ flex: 1, padding: "40px 48px", overflowY: "auto", maxHeight: "100vh" }}>
+      <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", height: "100vh", minHeight: 0, overflow: "hidden" }}>
+        <header className="client-mobile-header">
+          <Link href={ROUTES.HOME} className="client-mobile-brand">
+            <Logo size={36} />
+            <span>{APP_NAME}</span>
+          </Link>
+          <button
+            aria-label={showMobileMenu ? "Close menu" : "Open menu"}
+            className="client-mobile-menu-button"
+            onClick={() => setShowMobileMenu((v) => !v)}
+          >
+            {showMobileMenu ? <X size={19} /> : <Menu size={19} />}
+          </button>
+        </header>
+
+      <main className="client-dashboard-main" style={{ flex: 1, minHeight: 0, padding: "40px 48px", overflowY: "auto", overflowX: "hidden" }}>
         
         {/* TAB 1: OVERVIEW */}
         {activeTab === "overview" && (
           <div style={{ animation: "fadeIn 0.3s ease-out" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 36 }}>
+            <div className="client-dashboard-page-head" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 36 }}>
               <div>
                 <span style={{
                   display: "block",
@@ -276,7 +305,7 @@ export default function ClientDashboard() {
             </div>
 
             {/* Stat Cards */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 18, marginBottom: 40 }}>
+            <div className="client-stat-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 18, marginBottom: 40 }}>
               <div style={statCardStyle}>
                 <div>
                   <p style={{ fontSize: "0.65rem", textTransform: "uppercase", color: "var(--text-muted)", letterSpacing: "0.18em", fontWeight: 700, marginBottom: 10 }}>Total Appointments</p>
@@ -306,7 +335,7 @@ export default function ClientDashboard() {
             </div>
 
             {/* Upcoming Appointments Section */}
-            <div style={{ display: "grid", gridTemplateColumns: "1.7fr 1fr", gap: 28 }}>
+            <div className="client-overview-grid" style={{ display: "grid", gridTemplateColumns: "1.7fr 1fr", gap: 28 }}>
               <div>
                 <h2 style={{
                   fontSize: "1rem", fontWeight: 700, marginBottom: 18,
@@ -883,10 +912,100 @@ export default function ClientDashboard() {
           </div>
         )}
       </main>
+      </div>
 
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+        .client-mobile-header,
+        .client-mobile-overlay {
+          display: none;
+        }
+        @media (max-width: 768px) {
+          .client-dashboard-shell {
+            display: block !important;
+          }
+          .client-dashboard-sidebar {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            bottom: 0 !important;
+            z-index: 60 !important;
+            width: min(84vw, 300px) !important;
+            height: 100dvh !important;
+            transform: translateX(-100%);
+            transition: transform 0.24s ease;
+            box-shadow: 20px 0 45px rgba(0,0,0,0.28);
+          }
+          .client-dashboard-sidebar-open {
+            transform: translateX(0);
+          }
+          .client-mobile-overlay {
+            display: block;
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            border: 0;
+            background: rgba(13, 12, 10, 0.45);
+            backdrop-filter: blur(2px);
+          }
+          .client-mobile-header {
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border-light);
+            background: var(--bg-secondary);
+            position: sticky;
+            top: 0;
+            z-index: 30;
+          }
+          .client-mobile-brand {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-size: 0.86rem;
+            font-weight: 800;
+          }
+          .client-mobile-menu-button {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            border: 1px solid rgba(201,151,59,0.22);
+            background: rgba(201,151,59,0.08);
+            color: var(--gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+          .client-dashboard-main {
+            padding: 18px 16px !important;
+            height: calc(100dvh - 64px);
+          }
+          .client-dashboard-page-head {
+            align-items: flex-start !important;
+            flex-direction: column;
+            gap: 16px;
+            margin-bottom: 24px !important;
+          }
+          .client-dashboard-page-head h1 {
+            font-size: 1.85rem !important;
+          }
+          .client-dashboard-page-head a {
+            width: 100%;
+            justify-content: center;
+          }
+          .client-stat-grid,
+          .client-overview-grid {
+            grid-template-columns: 1fr !important;
+          }
+          .client-stat-grid {
+            margin-bottom: 28px !important;
+          }
+        }
       `}</style>
     </div>
   );

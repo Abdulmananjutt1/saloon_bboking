@@ -17,15 +17,15 @@ export default async function BookPage({ searchParams }: Props) {
   return (
     <>
       <Navbar />
-      <main style={{ background: "var(--bg-primary)", paddingTop: 96, paddingBottom: 80 }}>
-        <div className="sal-container" style={{ maxWidth: 900 }}>
+      <main className="site-main booking-page">
+        <div className="sal-container booking-page-inner">
           {/* Header */}
-          <div style={{ textAlign: "center", marginBottom: 48 }}>
+          <div className="booking-page-header">
             <span className="sal-eyebrow">Easy Booking</span>
             <h1 className="sal-h2" style={{ marginBottom: 12 }}>
               Book Your <span className="text-gold">Appointment</span>
             </h1>
-            <p style={{ color: "var(--text-secondary)", fontSize: "0.92rem", maxWidth: 420, margin: "0 auto" }}>
+            <p className="booking-page-subtitle">
               Select your service, choose a stylist, and pick a time. Done in under 2 minutes.
             </p>
           </div>

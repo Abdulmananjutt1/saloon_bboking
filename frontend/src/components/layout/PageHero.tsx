@@ -71,12 +71,14 @@ export default function PageHero({
       </div>
 
       <div
+        className="hero-decor-orb"
         style={{
           position: "absolute",
           top: "20%",
           right: "28%",
           width: 380,
           height: 380,
+          maxWidth: "70vw",
           background: "radial-gradient(circle, rgba(201,151,59,0.07) 0%, transparent 70%)",
           borderRadius: "50%",
           pointerEvents: "none",

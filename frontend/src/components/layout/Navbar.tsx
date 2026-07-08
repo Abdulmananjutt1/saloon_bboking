@@ -96,6 +96,7 @@ export default function Navbar() {
       {/* Main Navbar */}
       <header style={{
         position: "fixed", inset: "0 0 auto 0", zIndex: 50,
+        width: "100%", maxWidth: "100%",
         transition: "all 0.4s ease",
         background: scrolled
           ? (theme === "dark" ? "rgba(13,12,10,0.95)" : "rgba(253,248,242,0.95)")
@@ -108,12 +109,12 @@ export default function Navbar() {
           : "none",
       }}>
       <div className="sal-container">
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", height: 80 }}>
+        <div className="navbar-inner" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", height: 80 }}>
 
           {/* ── Logo ── */}
           <Link href={ROUTES.HOME} style={{ display: "flex", alignItems: "center", gap: 12, textDecoration: "none" }}>
             <Logo size={60} />
-            <div>
+            <div className="navbar-logo-text">
               <p style={{
                 fontSize: "1.1rem", fontWeight: 900, letterSpacing: "-0.02em",
                 background: "var(--grad-gold)",
@@ -277,6 +278,10 @@ export default function Navbar() {
           .lg-nav { display: flex !important; }
           .lg-cta { display: flex !important; }
           .mobile-toggle { display: none !important; }
+        }
+        @media (max-width: 640px) {
+          .navbar-logo-text { display: none !important; }
+          .navbar-inner { height: 64px !important; }
         }
       `}</style>
       </header>

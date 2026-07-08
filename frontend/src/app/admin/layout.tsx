@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { ROUTES, APP_NAME } from "@/constants";
 import {
   LayoutDashboard, CalendarDays,
-  Users, UserCheck, BarChart3, LogOut, Settings, MessageSquare, Bell, ChevronUp, Wallet, Scissors
+  Users, UserCheck, BarChart3, LogOut, Settings, MessageSquare, Bell, ChevronUp, Wallet, Scissors, Menu, X
 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { useAdminNavBadges } from "@/hooks/useAdminNavBadges";
@@ -30,6 +30,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname();
   const router = useRouter();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const { getBadge } = useAdminNavBadges();
   const { toasts, toast, remove } = useToast();
 
@@ -49,12 +50,25 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const active = (href: string) =>
     href === ROUTES.ADMIN ? pathname === href : pathname.startsWith(href);
 
+  useEffect(() => {
+    setShowMobileMenu(false);
+    setShowProfileMenu(false);
+  }, [pathname]);
+
   return (
-    <div style={{ minHeight: "100vh", display: "flex", background: "var(--bg-primary)" }}>
+    <div className="admin-shell" style={{ height: "100vh", display: "flex", background: "var(--bg-primary)", overflow: "hidden" }}>
       <ToastContainer toasts={toasts} onRemove={remove} />
 
+      {showMobileMenu && (
+        <button
+          aria-label="Close menu"
+          className="admin-mobile-overlay"
+          onClick={() => setShowMobileMenu(false)}
+        />
+      )}
+
       {/* ── Sidebar ── */}
-      <aside style={{
+      <aside className={showMobileMenu ? "admin-sidebar admin-sidebar-open" : "admin-sidebar"} style={{
         width: 240, flexShrink: 0,
         background: "var(--bg-secondary)",
         borderRight: "1px solid var(--border-light)",
@@ -73,7 +87,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
 
         {/* Nav */}
-        <nav style={{ flex: 1, padding: "16px 12px", overflowY: "auto", display: "flex", flexDirection: "column", gap: 2 }}>
+        <nav style={{ flex: 1, padding: "16px 12px", overflow: "hidden", display: "flex", flexDirection: "column", gap: 2 }}>
           {NAV.map(({ label, href, icon: Icon, badgeKey }) => {
             const on    = active(href);
             const badge = badgeKey ? getBadge(href) : 0;
@@ -81,6 +95,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <Link
                 key={href}
                 href={href}
+                onClick={() => setShowMobileMenu(false)}
                 style={{
                   display: "flex", alignItems: "center", gap: 10,
                   padding: "10px 12px", borderRadius: 10,
@@ -195,10 +210,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </aside>
 
       {/* ── Main area ── */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: "100vh", overflow: "hidden" }}>
+      <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", height: "100vh", minHeight: 0, overflow: "hidden" }}>
+        <header className="admin-mobile-header">
+          <Link href={ROUTES.HOME} className="admin-mobile-brand">
+            <Logo size={36} />
+            <span>{APP_NAME}</span>
+          </Link>
+          <button
+            aria-label={showMobileMenu ? "Close menu" : "Open menu"}
+            className="admin-mobile-menu-button"
+            onClick={() => setShowMobileMenu((v) => !v)}
+          >
+            {showMobileMenu ? <X size={19} /> : <Menu size={19} />}
+          </button>
+        </header>
 
         {/* Page content */}
-        <main style={{ flex: 1, padding: 28, overflowY: "auto" }}>
+        <main className="admin-main-content" style={{ flex: 1, minHeight: 0, padding: 28, overflowY: "auto", overflowX: "hidden" }}>
           {children}
         </main>
       </div>
@@ -207,6 +235,75 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(4px); }
           to { opacity: 1; transform: translateY(0); }
+        }
+        .admin-mobile-header,
+        .admin-mobile-overlay {
+          display: none;
+        }
+        @media (max-width: 768px) {
+          .admin-shell {
+            display: block !important;
+          }
+          .admin-sidebar {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            bottom: 0 !important;
+            z-index: 60 !important;
+            width: min(82vw, 300px) !important;
+            height: 100dvh !important;
+            transform: translateX(-100%);
+            transition: transform 0.24s ease;
+            box-shadow: 20px 0 45px rgba(0,0,0,0.28);
+          }
+          .admin-sidebar-open {
+            transform: translateX(0);
+          }
+          .admin-mobile-overlay {
+            display: block;
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            border: 0;
+            background: rgba(13, 12, 10, 0.45);
+            backdrop-filter: blur(2px);
+          }
+          .admin-mobile-header {
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border-light);
+            background: var(--bg-secondary);
+            position: sticky;
+            top: 0;
+            z-index: 30;
+          }
+          .admin-mobile-brand {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-size: 0.86rem;
+            font-weight: 800;
+          }
+          .admin-mobile-menu-button {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            border: 1px solid rgba(201,151,59,0.22);
+            background: rgba(201,151,59,0.08);
+            color: var(--gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+          .admin-main-content {
+            padding: 16px !important;
+            height: calc(100dvh - 64px);
+          }
         }
       `}</style>
     </div>

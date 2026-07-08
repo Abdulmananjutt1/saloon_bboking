@@ -66,13 +66,8 @@ export default function TeamPreviewSection({
         )}
 
         <div
-          className={splitHeader ? undefined : "reveal-stagger"}
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
-            gap: 24,
-            alignItems: "stretch",
-          }}
+          className={splitHeader ? "sal-grid-sm" : "reveal-stagger sal-grid-sm"}
+          style={{ gap: 24, alignItems: "stretch" }}
         >
           {stylists.map((stylist) => (
             <StylistCard

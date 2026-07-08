@@ -28,12 +28,14 @@ export default function HomeHero() {
       </div>
 
       <div
+        className="hero-decor-orb"
         style={{
           position: "absolute",
           top: "20%",
           right: "30%",
           width: 400,
           height: 400,
+          maxWidth: "80vw",
           background: "radial-gradient(circle, rgba(201,151,59,0.08) 0%, transparent 70%)",
           borderRadius: "50%",
           pointerEvents: "none",

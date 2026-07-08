@@ -30,7 +30,7 @@ export default function GalleryPage() {
   return (
     <>
       <Navbar />
-      <main style={{ background: "var(--bg-primary)" }}>
+      <main className="site-main" style={{ background: "var(--bg-primary)", width: "100%", maxWidth: "100%", overflowX: "hidden" }}>
         <PageHero
           image="https://images.unsplash.com/photo-1487412912498-0447578fcca8?w=1600&q=80"
           imageAlt="Glamour Studio Gallery"

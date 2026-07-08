@@ -158,13 +158,8 @@ export default function PricingSection() {
         </SectionHeader>
 
         <div
-          className="reveal-stagger"
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
-            gap: 16,
-            marginBottom: 40,
-          }}
+          className="reveal-stagger sal-grid"
+          style={{ gap: 16, marginBottom: 40 }}
         >
           {PRICING_LIST.map((item, i) => (
             <div key={i} className="pricing-card reveal-child">
