@@ -122,6 +122,7 @@ export default function BookingForm({ preSelectedService, preSelectedStylist }: 
   const [apiError, setApiError] = useState("");
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
+  const [waitlistRequested, setWaitlistRequested] = useState(false);
   const { toasts, toast, remove } = useToast();
 
   // Custom package state
@@ -176,6 +177,15 @@ export default function BookingForm({ preSelectedService, preSelectedStylist }: 
     }).finally(() => setDataLoading(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (preSelectedStylist || selectedStylist || STYLISTS.length === 0) return;
+    const favoriteId = localStorage.getItem("gs_favorite_stylist_id");
+    if (favoriteId && STYLISTS.some((s) => s.id === favoriteId && s.available)) {
+      setSelectedStylist(favoriteId);
+      if (!preSelectedService) setStep(2);
+    }
+  }, [STYLISTS, preSelectedStylist, preSelectedService, selectedStylist]);
 
   const service = SERVICES.find((s) => s.id === selectedService);
   const stylist = STYLISTS.find((s) => s.id === selectedStylist);
@@ -330,6 +340,11 @@ export default function BookingForm({ preSelectedService, preSelectedStylist }: 
     } finally {
       setLoading(false);
     }
+  };
+
+  const requestWaitlist = () => {
+    setWaitlistRequested(true);
+    toast("success", "Waitlist request saved", "We will notify you if a slot opens for this stylist.");
   };
 
   /* ── Confirmed screen ── */
@@ -924,8 +939,22 @@ export default function BookingForm({ preSelectedService, preSelectedStylist }: 
                 );
                 if (dynamicSlots.length === 0) {
                   return (
-                    <div style={{ padding: "24px 0", textAlign: "center", fontSize: "0.82rem", color: "var(--text-muted)", background: "rgba(255,255,255,0.02)", borderRadius: 12, border: "1px dashed var(--border-light)" }}>
-                      This stylist is not working on the selected day. Please choose a different date.
+                    <div style={{ padding: "24px", textAlign: "center", background: "rgba(255,255,255,0.02)", borderRadius: 12, border: "1px dashed var(--border-light)" }}>
+                      <AlertCircle style={{ width: 26, height: 26, color: "var(--gold)", margin: "0 auto 10px" }} />
+                      <p style={{ fontSize: "0.84rem", color: "var(--text-secondary)", marginBottom: 14 }}>
+                        This stylist is fully booked or unavailable on the selected day.
+                      </p>
+                      <button type="button" onClick={requestWaitlist} disabled={waitlistRequested} style={{
+                        display: "inline-flex", alignItems: "center", gap: 7,
+                        padding: "10px 15px", borderRadius: 10,
+                        border: "1px solid rgba(201,151,59,0.35)",
+                        background: waitlistRequested ? "rgba(52,211,153,0.1)" : "rgba(201,151,59,0.1)",
+                        color: waitlistRequested ? "#34d399" : "var(--gold)",
+                        fontWeight: 800, fontSize: "0.78rem", cursor: waitlistRequested ? "default" : "pointer"
+                      }}>
+                        {waitlistRequested ? <CheckCircle style={{ width: 14, height: 14 }} /> : <Clock style={{ width: 14, height: 14 }} />}
+                        {waitlistRequested ? "Waitlist Added" : "Notify When Available"}
+                      </button>
                     </div>
                   );
                 }

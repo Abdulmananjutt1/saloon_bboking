@@ -2,6 +2,14 @@ import Link from "next/link";
 import { APP_NAME, ROUTES, APP_PHONE, APP_EMAIL, APP_ADDRESS, APP_HOURS } from "@/constants";
 import { Mail, Phone, MapPin, Clock } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
+import { FacebookIcon, LinkedinIcon, TwitterIcon, YoutubeIcon } from "@/components/ui/SocialIcons";
+
+const SOCIAL_LINKS = [
+  { label: "Facebook", href: "#", Icon: FacebookIcon, className: "footer-social--facebook" },
+  { label: "LinkedIn", href: "#", Icon: LinkedinIcon, className: "footer-social--linkedin" },
+  { label: "YouTube", href: "#", Icon: YoutubeIcon, className: "footer-social--youtube" },
+  { label: "Twitter", href: "#", Icon: TwitterIcon, className: "footer-social--twitter" },
+];
 
 export default function Footer() {
   return (
@@ -13,15 +21,17 @@ export default function Footer() {
           {/* Brand */}
           <div className="footer-brand">
             <Link href={ROUTES.HOME} className="footer-brand-link">
-              <Logo size={54} className="footer-logo" />
+              <Logo size={64} className="footer-logo" />
               <span className="footer-brand-name">{APP_NAME}</span>
             </Link>
             <p className="footer-desc">
               Premium salon &amp; spa in Islamabad. Expert stylists, luxury products, and an experience that leaves you glowing.
             </p>
             <div className="footer-socials">
-              {[["f", "Facebook"], ["in", "Instagram"], ["yt", "YouTube"], ["tw", "Twitter"]].map(([s, label]) => (
-                <a key={s} href="#" aria-label={label} className="footer-social">{s}</a>
+              {SOCIAL_LINKS.map(({ label, href, Icon, className }) => (
+                <a key={label} href={href} aria-label={label} className={`footer-social ${className}`}>
+                  <Icon className="footer-social-icon" />
+                </a>
               ))}
             </div>
           </div>

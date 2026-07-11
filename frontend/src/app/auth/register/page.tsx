@@ -12,9 +12,10 @@ import { APP_NAME, ROUTES } from "@/constants";
 import { Logo } from "@/components/ui/Logo";
 import { validateRegisterForm, hasErrors, type ValidationError } from "@/lib/validations";
 import { authApi } from "@/lib/api";
+import { pushSessionToast, saveSession, type SessionUser } from "@/lib/session";
 
 const PERKS = [
-  "Instant booking confirmation — no waiting",
+  "Instant booking confirmation â€” no waiting",
   "Full booking history at your fingertips",
   "Exclusive member offers & early access deals",
   "Free cancellation up to 2 hours before",
@@ -28,6 +29,7 @@ function RegisterPageInner() {
   const [registeredEmail, setRegisteredEmail] = useState("");
   const [showPass, setShowPass] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [guestLoading, setGuestLoading] = useState(false);
   const [form, setForm]         = useState({ name: "", email: "", phone: "", password: "", confirmPassword: "" });
   const [errors, setErrors]     = useState<ValidationError>({});
   const [apiError, setApiError] = useState("");
@@ -89,6 +91,32 @@ function RegisterPageInner() {
     }
   };
 
+  const createGuestAccount = async () => {
+    setGuestLoading(true);
+    setApiError("");
+    try {
+      const res = await authApi.createGuest() as {
+        success: boolean;
+        data?: SessionUser;
+        token?: string;
+        error?: string;
+      };
+
+      if (!res.success || !res.data || !res.token) {
+        setApiError(res.error ?? "Could not create guest account. Please try again.");
+        return;
+      }
+
+      saveSession(res.data, res.token);
+      pushSessionToast("success", "Guest Account Created", `Welcome, ${res.data.name}. You are signed in now.`);
+      window.location.href = ROUTES.DASHBOARD;
+    } catch {
+      setApiError("Network error. Please check your connection.");
+    } finally {
+      setGuestLoading(false);
+    }
+  };
+
   return (
     <div style={{
       minHeight: "100vh",
@@ -97,9 +125,9 @@ function RegisterPageInner() {
       fontFamily: "var(--font-geist-sans), 'Inter', sans-serif",
     }}>
 
-      {/* ════════════════════════════════
-          LEFT — image + perks panel
-      ════════════════════════════════ */}
+      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+          LEFT â€” image + perks panel
+      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
       <div style={{
         flex: 1, position: "relative",
         display: "flex", alignItems: "center", justifyContent: "center",
@@ -161,7 +189,7 @@ function RegisterPageInner() {
             display: "flex", gap: 28,
             paddingTop: 32, borderTop: "1px solid rgba(201,151,59,0.2)"
           }}>
-            {[["8.5K+", "Happy Clients"], ["4.9★", "Avg Rating"], ["50+", "Services"]].map(([v, l]) => (
+            {[["8.5K+", "Happy Clients"], ["4.9â˜…", "Avg Rating"], ["50+", "Services"]].map(([v, l]) => (
               <div key={l}>
                 <p style={{ fontSize: "1.5rem", fontWeight: 900, color: "var(--gold-light)", lineHeight: 1 }}>{v}</p>
                 <p style={{ fontSize: "0.65rem", color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.16em", marginTop: 4 }}>{l}</p>
@@ -171,9 +199,9 @@ function RegisterPageInner() {
         </div>
       </div>
 
-      {/* ════════════════════════════════
-          RIGHT — form panel
-      ════════════════════════════════ */}
+      {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+          RIGHT â€” form panel
+      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
       <div style={{
         flex: "0 0 560px", maxWidth: 560, width: "100%",
         display: "flex", flexDirection: "column", justifyContent: "center",
@@ -334,7 +362,7 @@ function RegisterPageInner() {
           <button type="submit" className="sal-btn sal-btn-gold" disabled={loading}
             style={{ marginTop: 4, padding: "15px", fontSize: "0.92rem", justifyContent: "center", opacity: loading ? 0.72 : 1 }}>
             {loading
-              ? <><span style={{ width: 16, height: 16, borderRadius: "50%", border: "2px solid rgba(13,12,10,0.3)", borderTopColor: "#0d0c0a", display: "inline-block", animation: "spin 0.7s linear infinite" }} /> Creating account…</>
+              ? <><span style={{ width: 16, height: 16, borderRadius: "50%", border: "2px solid rgba(13,12,10,0.3)", borderTopColor: "#0d0c0a", display: "inline-block", animation: "spin 0.7s linear infinite" }} /> Creating accountâ€¦</>
               : <><ArrowRight style={{ width: 15, height: 15 }} /> Create Account — Free</>
             }
           </button>
@@ -350,6 +378,29 @@ function RegisterPageInner() {
             Sign in
           </Link>
         </p>
+        <div style={{ display: "flex", justifyContent: "center", marginTop: 14 }}>
+          <button
+            type="button"
+            onClick={createGuestAccount}
+            disabled={guestLoading}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              border: "none",
+              background: "transparent",
+              color: "var(--gold)",
+              fontSize: "0.78rem",
+              fontWeight: 700,
+              cursor: guestLoading ? "default" : "pointer",
+              opacity: guestLoading ? 0.72 : 1,
+              padding: "4px 6px",
+            }}
+          >
+            {guestLoading ? "Creating guest account..." : "Booked as guest? Create guest account"}
+            <ArrowRight style={{ width: 13, height: 13 }} />
+          </button>
+        </div>
         </>
         )}
       </div>

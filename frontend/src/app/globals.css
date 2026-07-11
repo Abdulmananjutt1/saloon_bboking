@@ -1607,22 +1607,47 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.4) sepi
 .footer-social {
   width: 34px;
   height: 34px;
-  background: var(--bg-card);
-  border: 1px solid var(--border-light);
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 0.7rem;
   font-weight: 700;
-  color: var(--text-muted);
   text-decoration: none;
-  transition: color 0.2s, border-color 0.2s;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.22);
+  transition: transform 0.2s, background 0.2s, border-color 0.2s, box-shadow 0.2s;
   flex-shrink: 0;
 }
+
+.footer-social-icon {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+.footer-social--facebook {
+  color: #1877f2;
+}
+
+.footer-social--linkedin {
+  color: #0a66c2;
+}
+
+.footer-social--youtube {
+  color: #ff0000;
+}
+
+.footer-social--twitter {
+  color: #111111;
+}
+
 .footer-social:hover {
-  color: var(--gold-light);
-  border-color: var(--border);
+  background: #ffffff;
+  border-color: rgba(201, 151, 59, 0.45);
+  box-shadow: 0 12px 26px rgba(201, 151, 59, 0.18);
+  transform: translateY(-2px);
 }
 
 .footer-heading {
@@ -1797,7 +1822,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.4) sepi
   width: 100%;
   max-width: 100%;
   margin: 0 auto 28px;
-  padding: 0 2px;
+  padding: 0 6px;
 }
 
 .booking-step-wrap {
@@ -1805,10 +1830,11 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.4) sepi
   align-items: flex-start;
   flex: 1;
   min-width: 0;
+  position: relative;
 }
 
 .booking-step-wrap:last-child {
-  flex: 0 0 auto;
+  flex: 1;
 }
 
 .booking-step-node {
@@ -1819,6 +1845,8 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.4) sepi
   flex-shrink: 0;
   width: 100%;
   min-width: 0;
+  position: relative;
+  z-index: 2;
 }
 
 .booking-step-circle {
@@ -1862,13 +1890,14 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.4) sepi
 .booking-step-label--done { color: #34d399; }
 
 .booking-step-line {
-  flex: 1;
-  min-width: 8px;
+  position: absolute;
+  left: calc(50% + 30px);
+  right: calc(-50% + 30px);
+  top: 21px;
   height: 1.5px;
-  margin-top: 22px;
-  margin-inline: 4px;
   background: var(--border-light);
   transition: background 0.4s ease;
+  z-index: 1;
 }
 
 .booking-step-line--done {
@@ -2013,20 +2042,26 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.4) sepi
     border-radius: 20px;
   }
 
+  .booking-steps {
+    margin-bottom: 24px;
+    padding: 0 4px;
+  }
+
   .booking-step-circle {
     width: 38px;
     height: 38px;
   }
 
   .booking-step-line {
-    margin-top: 19px;
-    min-width: 4px;
-    margin-inline: 2px;
+    left: calc(50% + 24px);
+    right: calc(-50% + 24px);
+    top: 18.5px;
   }
 
   .booking-step-label {
     font-size: 0.54rem;
     letter-spacing: 0.05em;
+    margin-top: 1px;
   }
 
   .booking-custom-fields {
@@ -2062,17 +2097,24 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.4) sepi
     padding: 18px 14px;
   }
 
+  .booking-steps {
+    padding: 0 2px;
+  }
+
   .booking-step-circle {
     width: 34px;
     height: 34px;
   }
 
   .booking-step-line {
-    margin-top: 17px;
+    left: calc(50% + 21px);
+    right: calc(-50% + 21px);
+    top: 16.5px;
   }
 
   .booking-step-label {
     font-size: 0.5rem;
+    line-height: 1.15;
   }
 }
 

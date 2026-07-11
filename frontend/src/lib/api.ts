@@ -81,6 +81,7 @@ export const clientsApi = {
 export const authApi = {
   login:    (body: unknown) => api.post("/auth/login",    body),
   register: (body: unknown) => api.post("/auth/register", body),
+  createGuest: () => api.post("/auth/guest"),
   forgotPassword: (email: string) => api.post("/auth/forgot-password", { email }),
   resetPassword:  (body: { token: string; password: string; confirmPassword: string }) =>
     api.post("/auth/reset-password", body),

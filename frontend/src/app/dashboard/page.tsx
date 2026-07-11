@@ -1,25 +1,33 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Scissors, CalendarDays,
   MessageSquare, Settings, LogOut, Clock3,
   ChevronRight, ChevronUp, Star, Send, Plus, Wifi, WifiOff,
-  User, Mail, Phone, Pencil, Check, X, Menu
+  User, Mail, Phone, Pencil, Check, X, Menu,
+  Bell, Gift, Heart, RotateCcw, CalendarPlus, Users
 } from "lucide-react";
 
 import { ROUTES, APP_NAME } from "@/constants";
 import { Logo } from "@/components/ui/Logo";
-import { useClientDashboard } from "@/hooks/useClientDashboard";
+import { useClientDashboard, type ChatMessage, type ClientBooking } from "@/hooks/useClientDashboard";
 import { RedBadge } from "@/components/ui/RedBadge";
 import { ToastContainer, useToast } from "@/components/ui/Toast";
 import { popSessionToast } from "@/lib/session";
+import { notificationService, type AppNotification } from "@/services/notifications";
 
 export default function ClientDashboard() {
-  const [activeTab, setActiveTab] = useState<"overview" | "appointments" | "chat" | "settings">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "appointments" | "notifications" | "chat" | "settings">("overview");
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [reviewBookingId, setReviewBookingId] = useState<string | null>(null);
+  const [favoriteStylistId, setFavoriteStylistId] = useState("");
+  const [notifs, setNotifs] = useState<AppNotification[]>([]);
+  const [notificationUnread, setNotificationUnread] = useState(0);
+  const [familyProfiles, setFamilyProfiles] = useState<FamilyProfile[]>([]);
+  const [showFamilyModal, setShowFamilyModal] = useState(false);
   const { toasts, toast, remove } = useToast();
 
   // Show toast from sessionStorage (e.g. after login)
@@ -41,6 +49,12 @@ export default function ClientDashboard() {
     logout, updateProfile,
   } = useClientDashboard();
 
+  const dashboardNotifications = useMemo(
+    () => buildClientNotificationFeed(notifs, upcomingBookings, pastBookings, chatMessages),
+    [notifs, upcomingBookings, pastBookings, chatMessages]
+  );
+  const totalNotificationUnread = notificationUnread + appointmentUnread + unreadCount;
+
   // Profile edit state
   const [editMode, setEditMode] = useState(false);
   const [profileForm, setProfileForm] = useState({ name: "", phone: "" });
@@ -57,10 +71,39 @@ export default function ClientDashboard() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const tab = new URLSearchParams(window.location.search).get("tab");
-    if (tab === "appointments" || tab === "chat" || tab === "settings") {
+    if (tab === "appointments" || tab === "notifications" || tab === "chat" || tab === "settings") {
       setActiveTab(tab);
     }
   }, []);
+
+  useEffect(() => {
+    const stored = localStorage.getItem("gs_favorite_stylist_id");
+    if (stored) setFavoriteStylistId(stored);
+  }, []);
+
+  useEffect(() => {
+    return notificationService.subscribe((items) => {
+      setNotifs(items);
+      setNotificationUnread(items.filter((n) => !n.read).length);
+    });
+  }, []);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("gs_family_profiles");
+      if (stored) setFamilyProfiles(JSON.parse(stored) as FamilyProfile[]);
+    } catch {
+      setFamilyProfiles([]);
+    }
+  }, []);
+
+  const saveFamilyProfile = (profile: Omit<FamilyProfile, "id">) => {
+    const next = [...familyProfiles, { ...profile, id: `fp-${Date.now()}` }];
+    setFamilyProfiles(next);
+    localStorage.setItem("gs_family_profiles", JSON.stringify(next));
+    setShowFamilyModal(false);
+    toast("success", "Profile added", `${profile.name} is ready for quicker bookings.`);
+  };
 
   // Mark chat / appointments read when tab is open
   useEffect(() => {
@@ -130,6 +173,7 @@ export default function ClientDashboard() {
           {[
             { tab: "overview",      label: "Overview",            Icon: Scissors,      badge: 0 },
             { tab: "appointments",  label: "My Appointments",     Icon: CalendarDays,  badge: appointmentUnread },
+            { tab: "notifications", label: "Notifications",       Icon: Bell,          badge: totalNotificationUnread },
             { tab: "chat",          label: "Consultation Chat",   Icon: MessageSquare, badge: unreadCount },
             { tab: "settings",      label: "Profile Settings",    Icon: Settings,      badge: 0 },
           ].map(({ tab, label, Icon, badge }) => {
@@ -304,6 +348,18 @@ export default function ClientDashboard() {
               </Link>
             </div>
 
+            <AppointmentHeroCard
+              booking={upcomingBookings[0]}
+              cancellingId={cancellingId}
+              onCancel={cancelBooking}
+            />
+
+            <OffersStrip />
+
+            <ServiceMemoryCard
+              pastBookings={pastBookings}
+            />
+
             {/* Stat Cards */}
             <div className="client-stat-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 18, marginBottom: 40 }}>
               <div style={statCardStyle}>
@@ -373,6 +429,7 @@ export default function ClientDashboard() {
                         </div>
                         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
                           <span style={statusBadgeStyle(b.status)}>{b.status}</span>
+                          <BookingTimeline status={b.status} compact />
                           {b.status !== "cancelled" && (
                             <button 
                               onClick={() => cancelBooking(b.id)}
@@ -447,6 +504,10 @@ export default function ClientDashboard() {
                     <RedBadge count={unreadCount} />
                   </button>
                 </div>
+                <FamilyProfilesCard
+                  profiles={familyProfiles}
+                  onAdd={() => setShowFamilyModal(true)}
+                />
               </div>
             </div>
           </div>
@@ -504,6 +565,7 @@ export default function ClientDashboard() {
                                 with <strong>{b.stylistName}</strong> &bull; {b.time} &bull; duration: {b.duration}m
                               </p>
                               {b.notes && <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: 6, fontStyle: "italic" }}>&ldquo;{b.notes}&rdquo;</p>}
+                              <BookingTimeline status={b.status} />
                             </div>
                           </div>
                           <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
@@ -550,6 +612,14 @@ export default function ClientDashboard() {
                           <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
                             <p style={{ fontSize: "0.9rem", fontWeight: 600 }}>Rs. {b.price.toLocaleString()}</p>
                             <span style={statusBadgeStyle(b.status)}>{b.status}</span>
+                            <Link href={`${ROUTES.BOOK}?service=${b.serviceId}&stylist=${b.stylistId}`} style={smallActionLinkStyle}>
+                              <RotateCcw style={{ width: 13, height: 13 }} /> Book Again
+                            </Link>
+                            {b.status === "completed" && (
+                              <button onClick={() => setReviewBookingId(b.id)} style={smallGhostButtonStyle}>
+                                <Star style={{ width: 13, height: 13 }} /> Rate
+                              </button>
+                            )}
                           </div>
                         </div>
                       ))}
@@ -561,13 +631,67 @@ export default function ClientDashboard() {
           </div>
         )}
 
+        {activeTab === "notifications" && (
+          <div style={{ animation: "fadeIn 0.3s ease-out" }}>
+            <div className="client-dashboard-page-head" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 28 }}>
+              <div>
+                <h1 style={{ fontSize: "2rem", fontWeight: 800, marginBottom: 6, fontFamily: "var(--font-display), Georgia, serif" }}>Notifications</h1>
+                <p style={{ fontSize: "0.86rem", color: "var(--text-secondary)" }}>Booking updates, chat alerts and account reminders in one place.</p>
+              </div>
+              <div style={{ display: "flex", gap: 10 }}>
+                <button onClick={() => {
+                  notificationService.markAllRead();
+                  markAppointmentsRead();
+                  markChatRead();
+                }} style={smallGhostButtonStyle}>Mark read</button>
+                <button onClick={() => notificationService.clearAll()} style={smallGhostButtonStyle}>Clear all</button>
+              </div>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12, marginBottom: 16 }}>
+              <NotificationStat label="Unread" value={totalNotificationUnread} />
+              <NotificationStat label="Appointments" value={upcomingBookings.length} />
+              <NotificationStat label="Messages" value={unreadCount} />
+            </div>
+            {dashboardNotifications.length === 0 ? (
+              <div style={{ ...emptyStateStyle, marginTop: 16 }}>
+                <Bell style={{ width: 36, height: 36, color: "var(--text-muted)", margin: "0 auto 12px" }} />
+                <p style={{ color: "var(--text-secondary)", fontSize: "0.9rem" }}>No updates yet.</p>
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 16 }}>
+                {dashboardNotifications.map((n) => (
+                  <Link
+                    key={n.id}
+                    href={n.url ?? "/dashboard?tab=notifications"}
+                    onClick={() => {
+                      if (n.source === "local") notificationService.markRead(n.id);
+                    }}
+                    style={{ ...notificationRowStyle, opacity: n.read ? 0.72 : 1 }}
+                  >
+                    <div style={iconBoxStyle}>{notificationIcon(n.type)}</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 4 }}>
+                        <h3 style={{ fontSize: "0.92rem", fontWeight: 800 }}>{n.title}</h3>
+                        <span style={notificationPillStyle(n.type)}>{n.label}</span>
+                      </div>
+                      <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", lineHeight: 1.5 }}>{n.body}</p>
+                    </div>
+                    <span style={{ color: "var(--text-muted)", fontSize: "0.72rem", whiteSpace: "nowrap" }}>{timeAgo(n.timestamp)}</span>
+                    {!n.read && <span style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--gold)" }} />}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* TAB 3: CONSULTATION CHAT */}
         {activeTab === "chat" && (
           <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 120px)", animation: "fadeIn 0.3s ease-out" }}>
             
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-              <div>
-                <h1 style={{
+            <div>
+              <h1 style={{
                   fontSize: "2rem", fontWeight: 800, color: "var(--text-primary)",
                   fontFamily: "var(--font-display), Georgia, serif",
                   letterSpacing: "-0.02em"
@@ -909,10 +1033,36 @@ export default function ClientDashboard() {
               </div>
             </div>
 
+            <FavoriteStylistCard
+              bookings={[...upcomingBookings, ...pastBookings]}
+              favoriteStylistId={favoriteStylistId}
+              onChange={(id) => {
+                setFavoriteStylistId(id);
+                localStorage.setItem("gs_favorite_stylist_id", id);
+                toast("success", "Favorite stylist saved", "Your next booking can start with this stylist selected.");
+              }}
+            />
+
           </div>
         )}
       </main>
       </div>
+      {reviewBookingId && (
+        <ReviewModal
+          booking={pastBookings.find((b) => b.id === reviewBookingId)}
+          onClose={() => setReviewBookingId(null)}
+          onSubmit={() => {
+            toast("success", "Review saved", "Thank you for rating your visit.");
+            setReviewBookingId(null);
+          }}
+        />
+      )}
+      {showFamilyModal && (
+        <FamilyProfileModal
+          onClose={() => setShowFamilyModal(false)}
+          onSubmit={saveFamilyProfile}
+        />
+      )}
 
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
@@ -1064,6 +1214,450 @@ const bookingRowStyle = {
   background: "var(--bg-secondary)",
   border: "1px solid var(--border-light)"
 };
+
+const smallActionLinkStyle = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 6,
+  color: "var(--gold)",
+  fontSize: "0.78rem",
+  fontWeight: 800,
+  textDecoration: "none",
+  whiteSpace: "nowrap" as const
+};
+
+const smallGhostButtonStyle = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 6,
+  padding: "8px 11px",
+  borderRadius: 9,
+  border: "1px solid var(--border-light)",
+  background: "rgba(255,255,255,0.03)",
+  color: "var(--text-primary)",
+  fontSize: "0.76rem",
+  fontWeight: 800,
+  cursor: "pointer",
+  textDecoration: "none",
+  whiteSpace: "nowrap" as const
+};
+
+const notificationRowStyle = {
+  display: "flex",
+  alignItems: "center",
+  gap: 14,
+  padding: "16px 18px",
+  borderRadius: 14,
+  background: "var(--bg-secondary)",
+  border: "1px solid var(--border-light)",
+  color: "var(--text-primary)",
+  textDecoration: "none"
+};
+
+const emptyStateStyle = {
+  padding: "48px 28px",
+  borderRadius: 16,
+  background: "rgba(255,255,255,0.02)",
+  border: "1px dashed var(--border-light)",
+  textAlign: "center" as const
+};
+
+type ClientNotificationItem = {
+  id: string;
+  title: string;
+  body: string;
+  type: AppNotification["type"];
+  label: string;
+  timestamp: number;
+  read: boolean;
+  url?: string;
+  source: "local" | "booking" | "chat";
+};
+
+function buildClientNotificationFeed(
+  localNotifications: AppNotification[],
+  upcomingBookings: ClientBooking[],
+  pastBookings: ClientBooking[],
+  chatMessages: ChatMessage[],
+): ClientNotificationItem[] {
+  const bookingItems = [...upcomingBookings, ...pastBookings]
+    .slice()
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 12)
+    .map((booking) => ({
+      id: `booking-${booking.id}`,
+      title: bookingStatusTitle(booking.status),
+      body: `${booking.serviceName} with ${booking.stylistName} • ${formatBookingDate(booking.date)} at ${booking.time}`,
+      type: "status" as const,
+      label: "Booking",
+      timestamp: new Date(booking.createdAt).getTime(),
+      read: booking.status !== "pending",
+      url: "/dashboard?tab=appointments",
+      source: "booking" as const,
+    }));
+
+  const chatItems = chatMessages
+    .filter((message) => message.sender === "admin")
+    .slice(-8)
+    .map((message) => ({
+      id: `chat-${message.id}`,
+      title: `Message from ${message.senderName || "Glamour Studio"}`,
+      body: message.text,
+      type: "chat" as const,
+      label: "Chat",
+      timestamp: new Date(message.createdAt).getTime(),
+      read: true,
+      url: "/dashboard?tab=chat",
+      source: "chat" as const,
+    }));
+
+  const localItems = localNotifications.map((notification) => ({
+    id: notification.id,
+    title: notification.title,
+    body: notification.body,
+    type: notification.type,
+    label: notificationLabel(notification.type),
+    timestamp: notification.timestamp,
+    read: notification.read,
+    url: notification.url,
+    source: "local" as const,
+  }));
+
+  return [...localItems, ...bookingItems, ...chatItems]
+    .filter((item, index, all) => all.findIndex((n) => n.id === item.id) === index)
+    .sort((a, b) => b.timestamp - a.timestamp);
+}
+
+function bookingStatusTitle(status: string) {
+  const labels: Record<string, string> = {
+    pending: "Booking request received",
+    confirmed: "Booking confirmed",
+    completed: "Visit completed",
+    cancelled: "Booking cancelled",
+  };
+  return labels[status] ?? "Booking update";
+}
+
+function notificationLabel(type: AppNotification["type"]) {
+  const labels: Record<AppNotification["type"], string> = {
+    booking: "Booking",
+    chat: "Chat",
+    status: "Status",
+    system: "System",
+  };
+  return labels[type];
+}
+
+function notificationIcon(type: AppNotification["type"]) {
+  const style = { width: 16, height: 16, color: "var(--gold)" };
+  if (type === "chat") return <MessageSquare style={style} />;
+  if (type === "booking" || type === "status") return <CalendarDays style={style} />;
+  return <Bell style={style} />;
+}
+
+function notificationPillStyle(type: AppNotification["type"]) {
+  const colors: Record<AppNotification["type"], { color: string; bg: string }> = {
+    booking: { color: "var(--gold)", bg: "rgba(201,151,59,0.1)" },
+    status: { color: "#60a5fa", bg: "rgba(96,165,250,0.1)" },
+    chat: { color: "#34d399", bg: "rgba(52,211,153,0.1)" },
+    system: { color: "var(--text-muted)", bg: "rgba(255,255,255,0.06)" },
+  };
+  return {
+    color: colors[type].color,
+    background: colors[type].bg,
+    borderRadius: 999,
+    padding: "3px 8px",
+    fontSize: "0.62rem",
+    fontWeight: 800,
+    textTransform: "uppercase" as const,
+    letterSpacing: "0.06em",
+  };
+}
+
+function formatBookingDate(date: string) {
+  const parsed = new Date(date);
+  if (Number.isNaN(parsed.getTime())) return date;
+  return parsed.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+function timeAgo(timestamp: number) {
+  const diff = Math.max(0, Date.now() - timestamp);
+  const minute = 60_000;
+  const hour = 60 * minute;
+  const day = 24 * hour;
+  if (diff < minute) return "Now";
+  if (diff < hour) return `${Math.floor(diff / minute)}m ago`;
+  if (diff < day) return `${Math.floor(diff / hour)}h ago`;
+  return `${Math.floor(diff / day)}d ago`;
+}
+
+function NotificationStat({ label, value }: { label: string; value: number }) {
+  return (
+    <div style={{ padding: "14px 16px", borderRadius: 14, background: "var(--bg-secondary)", border: "1px solid var(--border-light)" }}>
+      <p style={{ fontSize: "0.66rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.14em", fontWeight: 800, marginBottom: 6 }}>{label}</p>
+      <p style={{ fontSize: "1.45rem", color: "var(--text-primary)", fontWeight: 900, lineHeight: 1 }}>{value}</p>
+    </div>
+  );
+}
+
+const modalInputStyle = {
+  width: "100%",
+  borderRadius: 11,
+  border: "1px solid var(--border-light)",
+  background: "rgba(255,255,255,0.03)",
+  color: "var(--text-primary)",
+  padding: "11px 12px",
+  fontSize: "0.86rem",
+  outline: "none"
+};
+
+type FamilyProfile = {
+  id: string;
+  name: string;
+  relation: string;
+  phone: string;
+};
+
+function addToCalendarUrl(booking: ClientBooking) {
+  const start = parseBookingDateTime(booking.date, booking.time);
+  if (!start) {
+    return ROUTES.MY_BOOKINGS;
+  }
+  const end = new Date(start.getTime() + booking.duration * 60_000);
+  const fmt = (d: Date) => d.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+  const params = new URLSearchParams({
+    action: "TEMPLATE",
+    text: `${booking.serviceName} at Glamour Studio`,
+    dates: `${fmt(start)}/${fmt(end)}`,
+    details: `Stylist: ${booking.stylistName}`,
+  });
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
+}
+
+function parseBookingDateTime(date: string, time: string) {
+  const datePart = date.includes("T") ? date.split("T")[0] : date;
+  const timeMatch = time.trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
+  if (!datePart || !timeMatch) {
+    const fallback = new Date(date);
+    return Number.isNaN(fallback.getTime()) ? null : fallback;
+  }
+
+  let hours = Number(timeMatch[1]);
+  const minutes = Number(timeMatch[2]);
+  const meridiem = timeMatch[3]?.toUpperCase();
+
+  if (meridiem === "PM" && hours < 12) hours += 12;
+  if (meridiem === "AM" && hours === 12) hours = 0;
+
+  const paddedHours = String(hours).padStart(2, "0");
+  const paddedMinutes = String(minutes).padStart(2, "0");
+  const parsed = new Date(`${datePart}T${paddedHours}:${paddedMinutes}:00`);
+
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function AppointmentHeroCard({ booking, cancellingId, onCancel }: {
+  booking?: ClientBooking;
+  cancellingId: string | null;
+  onCancel: (id: string) => void;
+}) {
+  if (!booking) return null;
+  return (
+    <section style={{ marginBottom: 18, padding: "24px", borderRadius: 16, background: "linear-gradient(135deg, rgba(201,151,59,0.18), rgba(255,255,255,0.035))", border: "1px solid rgba(201,151,59,0.28)" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 18, alignItems: "flex-start", flexWrap: "wrap" }}>
+        <div>
+          <p style={{ fontSize: "0.68rem", color: "var(--gold)", fontWeight: 800, letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: 10 }}>Next visit</p>
+          <h2 style={{ fontSize: "1.45rem", fontWeight: 900, fontFamily: "var(--font-display), Georgia, serif", marginBottom: 8 }}>{booking.serviceName}</h2>
+          <p style={{ color: "var(--text-secondary)", fontSize: "0.92rem" }}>
+            {new Date(booking.date).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })} at {booking.time} with {booking.stylistName}
+          </p>
+        </div>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <Link href={addToCalendarUrl(booking)} target="_blank" style={smallGhostButtonStyle}><CalendarPlus style={{ width: 14, height: 14 }} /> Add to Calendar</Link>
+          <Link href={`${ROUTES.BOOK}?service=${booking.serviceId}&stylist=${booking.stylistId}`} style={smallGhostButtonStyle}><Pencil style={{ width: 14, height: 14 }} /> Reschedule</Link>
+          <button onClick={() => onCancel(booking.id)} disabled={cancellingId === booking.id} style={smallGhostButtonStyle}>
+            <X style={{ width: 14, height: 14 }} /> {cancellingId === booking.id ? "Cancelling" : "Cancel"}
+          </button>
+        </div>
+      </div>
+      <BookingTimeline status={booking.status} />
+    </section>
+  );
+}
+
+function BookingTimeline({ status, compact = false }: { status: string; compact?: boolean }) {
+  const steps = ["pending", "confirmed", "completed"];
+  const activeIndex = status === "cancelled" ? 0 : Math.max(0, steps.indexOf(status));
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: compact ? 5 : 8, marginTop: compact ? 0 : 18 }}>
+      {steps.map((step, idx) => {
+        const active = idx <= activeIndex && status !== "cancelled";
+        return (
+          <div key={step} style={{ display: "flex", alignItems: "center", gap: compact ? 5 : 8 }}>
+            <span style={{ width: compact ? 8 : 10, height: compact ? 8 : 10, borderRadius: "50%", background: active ? "var(--gold)" : "rgba(255,255,255,0.16)" }} />
+            {!compact && <span style={{ fontSize: "0.72rem", color: active ? "var(--text-primary)" : "var(--text-muted)", fontWeight: 800, textTransform: "capitalize" }}>{step}</span>}
+            {idx < steps.length - 1 && <span style={{ width: compact ? 16 : 34, height: 1, background: idx < activeIndex ? "var(--gold)" : "rgba(255,255,255,0.12)" }} />}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function OffersStrip() {
+  return (
+    <section style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 18 }}>
+      {[
+        ["GLAM20", "20% off on your next color refresh"],
+        ["TRIMTIME", "Free consultation with any haircut booking"],
+      ].map(([code, text]) => (
+        <div key={code} style={{ padding: "16px 18px", borderRadius: 14, background: "var(--bg-secondary)", border: "1px solid var(--border-light)", display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={iconBoxStyle}><Gift style={{ width: 16, height: 16, color: "var(--gold)" }} /></div>
+          <div>
+            <p style={{ color: "var(--gold)", fontWeight: 900, fontSize: "0.82rem", letterSpacing: "0.12em" }}>{code}</p>
+            <p style={{ color: "var(--text-muted)", fontSize: "0.78rem", marginTop: 3 }}>{text}</p>
+          </div>
+        </div>
+      ))}
+    </section>
+  );
+}
+
+function ServiceMemoryCard({ pastBookings }: { pastBookings: ClientBooking[] }) {
+  const lastCompleted = pastBookings.find((b) => b.status === "completed");
+  if (!lastCompleted) return null;
+  const weeks = Math.max(1, Math.round((Date.now() - new Date(lastCompleted.date).getTime()) / (7 * 24 * 60 * 60 * 1000)));
+  return (
+    <div style={{ marginBottom: 28, padding: "14px 18px", borderRadius: 14, background: "rgba(59,130,246,0.08)", border: "1px solid rgba(59,130,246,0.18)", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+      <p style={{ color: "var(--text-secondary)", fontSize: "0.86rem" }}>Last {lastCompleted.serviceName}: {weeks} weeks ago. Time for a refresh?</p>
+      <Link href={`${ROUTES.BOOK}?service=${lastCompleted.serviceId}&stylist=${lastCompleted.stylistId}`} style={smallActionLinkStyle}>Book a trim <ChevronRight style={{ width: 13, height: 13 }} /></Link>
+    </div>
+  );
+}
+
+function FavoriteStylistCard({ bookings, favoriteStylistId, onChange }: {
+  bookings: ClientBooking[];
+  favoriteStylistId: string;
+  onChange: (id: string) => void;
+}) {
+  const stylists = Array.from(new Map(bookings.map((b) => [b.stylistId, b.stylistName])).entries());
+  if (stylists.length === 0) return null;
+  return (
+    <section style={{ marginBottom: 24, padding: "18px", borderRadius: 14, background: "var(--bg-secondary)", border: "1px solid var(--border-light)" }}>
+      <h2 style={{ fontSize: "1rem", fontWeight: 800, marginBottom: 12 }}>Favorite stylist</h2>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+        {stylists.map(([id, name]) => (
+          <button key={id} onClick={() => onChange(id)} style={{ ...smallGhostButtonStyle, borderColor: favoriteStylistId === id ? "rgba(201,151,59,0.5)" : "var(--border-light)", color: favoriteStylistId === id ? "var(--gold)" : "var(--text-primary)" }}>
+            <Heart style={{ width: 14, height: 14, fill: favoriteStylistId === id ? "var(--gold)" : "none" }} /> {name}
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function FamilyProfilesCard({ profiles, onAdd }: { profiles: FamilyProfile[]; onAdd: () => void }) {
+  return (
+    <div style={{ marginTop: 18, padding: "18px", borderRadius: 14, background: "var(--bg-secondary)", border: "1px solid var(--border-light)" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+        <Users style={{ width: 17, height: 17, color: "var(--gold)" }} />
+        <h3 style={{ fontSize: "0.92rem", fontWeight: 800 }}>Family profiles</h3>
+      </div>
+      <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", lineHeight: 1.6, marginBottom: 12 }}>Save family members for quicker bookings from one account.</p>
+      {profiles.length > 0 && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
+          {profiles.slice(0, 3).map((profile) => (
+            <div key={profile.id} style={{ display: "flex", justifyContent: "space-between", gap: 10, padding: "9px 10px", borderRadius: 10, background: "rgba(255,255,255,0.03)" }}>
+              <span style={{ fontSize: "0.8rem", fontWeight: 800 }}>{profile.name}</span>
+              <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{profile.relation}</span>
+            </div>
+          ))}
+        </div>
+      )}
+      <button onClick={onAdd} style={smallGhostButtonStyle}><Plus style={{ width: 13, height: 13 }} /> Add profile</button>
+    </div>
+  );
+}
+
+function ReviewModal({ booking, onClose, onSubmit }: { booking?: ClientBooking; onClose: () => void; onSubmit: () => void }) {
+  const [rating, setRating] = useState(5);
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.58)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+      <div style={{ width: "min(460px, 100%)", borderRadius: 18, background: "var(--bg-card)", border: "1px solid var(--border-light)", padding: 24 }}>
+        <h2 style={{ fontSize: "1.25rem", fontWeight: 900, marginBottom: 6 }}>Rate your visit</h2>
+        <p style={{ fontSize: "0.84rem", color: "var(--text-muted)", marginBottom: 18 }}>{booking?.serviceName ?? "Completed appointment"} with {booking?.stylistName ?? "your stylist"}</p>
+        <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
+          {[1, 2, 3, 4, 5].map((n) => (
+            <button key={n} onClick={() => setRating(n)} style={{ border: 0, background: "transparent", cursor: "pointer", padding: 2 }}>
+              <Star style={{ width: 28, height: 28, color: "var(--gold)", fill: n <= rating ? "var(--gold)" : "none" }} />
+            </button>
+          ))}
+        </div>
+        <textarea placeholder="Share a quick note" style={{ width: "100%", minHeight: 96, borderRadius: 12, border: "1px solid var(--border-light)", background: "rgba(255,255,255,0.03)", color: "var(--text-primary)", padding: 12, resize: "vertical", marginBottom: 16 }} />
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+          <button onClick={onClose} style={smallGhostButtonStyle}>Later</button>
+          <button onClick={onSubmit} style={{ ...smallGhostButtonStyle, background: "var(--grad-gold-btn)", color: "#0d0c0a", borderColor: "transparent" }}>Submit review</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FamilyProfileModal({ onClose, onSubmit }: {
+  onClose: () => void;
+  onSubmit: (profile: Omit<FamilyProfile, "id">) => void;
+}) {
+  const [form, setForm] = useState({ name: "", relation: "", phone: "" });
+  const [error, setError] = useState("");
+
+  const submit = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!form.name.trim()) {
+      setError("Name is required.");
+      return;
+    }
+    onSubmit({
+      name: form.name.trim(),
+      relation: form.relation.trim() || "Family",
+      phone: form.phone.trim(),
+    });
+  };
+
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.58)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+      <form onSubmit={submit} style={{ width: "min(430px, 100%)", borderRadius: 18, background: "var(--bg-card)", border: "1px solid var(--border-light)", padding: 24 }}>
+        <h2 style={{ fontSize: "1.2rem", fontWeight: 900, marginBottom: 6 }}>Add family profile</h2>
+        <p style={{ fontSize: "0.82rem", color: "var(--text-muted)", marginBottom: 18 }}>Keep family details ready for faster future bookings.</p>
+        <div style={{ display: "grid", gap: 12 }}>
+          <input
+            value={form.name}
+            onChange={(e) => { setForm((prev) => ({ ...prev, name: e.target.value })); setError(""); }}
+            placeholder="Name"
+            style={modalInputStyle}
+          />
+          <input
+            value={form.relation}
+            onChange={(e) => setForm((prev) => ({ ...prev, relation: e.target.value }))}
+            placeholder="Relation"
+            style={modalInputStyle}
+          />
+          <input
+            value={form.phone}
+            onChange={(e) => setForm((prev) => ({ ...prev, phone: e.target.value }))}
+            placeholder="Phone optional"
+            style={modalInputStyle}
+          />
+        </div>
+        {error && <p style={{ color: "#f87171", fontSize: "0.78rem", marginTop: 10 }}>{error}</p>}
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 18 }}>
+          <button type="button" onClick={onClose} style={smallGhostButtonStyle}>Cancel</button>
+          <button type="submit" style={{ ...smallGhostButtonStyle, background: "var(--grad-gold-btn)", color: "#0d0c0a", borderColor: "transparent" }}>Save profile</button>
+        </div>
+      </form>
+    </div>
+  );
+}
 
 function statusBadgeStyle(status: string) {
   const meta: Record<string, { color: string; bg: string }> = {

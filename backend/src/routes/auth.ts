@@ -30,6 +30,74 @@ async function createVerificationToken(userId: string): Promise<string> {
   return token;
 }
 
+function buildSafeUser(user: {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  role: "ADMIN" | "CLIENT";
+  emailVerified: boolean;
+  emailVerifiedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+}) {
+  return user;
+}
+
+function randomGuestName(): string {
+  return `Guest Account ${Math.floor(1000 + Math.random() * 9000)}`;
+}
+
+function randomGuestPhone(): string {
+  return `0300${Math.floor(1000000 + Math.random() * 9000000)}`;
+}
+
+async function uniqueGuestEmail(): Promise<string> {
+  for (let i = 0; i < 10; i++) {
+    const suffix = crypto.randomBytes(4).toString("hex");
+    const email = `guest-${suffix}@glamourstudio.local`;
+    const existing = await prisma.user.findUnique({ where: { email } });
+    if (!existing) return email;
+  }
+  return `guest-${Date.now()}@glamourstudio.local`;
+}
+
+// POST /auth/guest — create a temporary client account and sign in immediately
+router.post("/guest", async (_req: Request, res: Response) => {
+  try {
+    const email = await uniqueGuestEmail();
+    const password = `Guest${crypto.randomBytes(6).toString("hex")}1`;
+    const user = await prisma.user.create({
+      data: {
+        name: randomGuestName(),
+        email,
+        phone: randomGuestPhone(),
+        passwordHash: hashPassword(password),
+        role: "CLIENT",
+        emailVerified: true,
+        emailVerifiedAt: new Date(),
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        role: true,
+        emailVerified: true,
+        emailVerifiedAt: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    const token = jwt.sign({ userId: user.id, role: user.role }, JWT_SECRET, { expiresIn: "7d" });
+    res.status(201).json({ success: true, data: buildSafeUser(user), token });
+  } catch (err) {
+    console.error("[POST /auth/guest]", err);
+    res.status(500).json({ success: false, error: "Failed to create guest account." });
+  }
+});
+
 // POST /auth/register
 router.post("/register", async (req: Request, res: Response) => {
   try {
