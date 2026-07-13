@@ -34,8 +34,10 @@ async function main() {
       name:         "Admin",
       email:        "admin@glamourstudio.pk",
       phone:        "0300-0000000",
-      passwordHash: hashPassword("admin123A"),
-      role:         UserRole.ADMIN,
+      passwordHash:  hashPassword("admin123A"),
+      role:          UserRole.ADMIN,
+      emailVerified: true,
+      emailVerifiedAt: new Date(),
     },
   });
   console.log("✅ Admin user created");

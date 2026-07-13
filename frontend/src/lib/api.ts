@@ -81,6 +81,12 @@ export const clientsApi = {
 export const authApi = {
   login:    (body: unknown) => api.post("/auth/login",    body),
   register: (body: unknown) => api.post("/auth/register", body),
+  createGuest: () => api.post("/auth/guest"),
+  forgotPassword: (email: string) => api.post("/auth/forgot-password", { email }),
+  resetPassword:  (body: { token: string; password: string; confirmPassword: string }) =>
+    api.post("/auth/reset-password", body),
+  verifyEmail:    (token: string) => api.get(`/auth/verify-email?token=${encodeURIComponent(token)}`),
+  resendVerification: (email: string) => api.post("/auth/resend-verification", { email }),
   updateProfile: (body: { name: string; phone: string }, token: string) =>
     api.patch("/auth/profile", body, { headers: { Authorization: `Bearer ${token}` } }),
 };
@@ -131,6 +137,17 @@ export const usersApi = {
       "/auth/users",
       { headers: { Authorization: `Bearer ${token}` } }
     ),
+};
+
+export const contactApi = {
+  send: (body: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone?: string;
+    subject: string;
+    message: string;
+  }) => api.post("/contact", body),
 };
 
 export const payrollApi = {

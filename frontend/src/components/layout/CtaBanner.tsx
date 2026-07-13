@@ -1,23 +1,21 @@
-// ─────────────────────────────────────────────────────────
-//  CtaBanner — Shared bottom CTA section used on public pages
-//  (services, stylists, gallery, contact, home)
-// ─────────────────────────────────────────────────────────
 import Link from "next/link";
 import { Scissors } from "lucide-react";
 import { ROUTES } from "@/constants";
+import { Logo } from "@/components/ui/Logo";
 
-interface CtaButton {
+export interface CtaButton {
   label: string;
   href: string;
   variant?: "gold" | "outline" | "ghost";
   icon?: React.ReactNode;
+  external?: boolean;
 }
 
-interface CtaBannerProps {
-  heading: React.ReactNode;        // can have <span className="text-gold">
+export interface CtaBannerProps {
+  heading: React.ReactNode;
   subtext: string;
   buttons?: CtaButton[];
-  note?: string;
+  footer?: React.ReactNode;
 }
 
 const DEFAULT_BUTTONS: CtaButton[] = [
@@ -29,11 +27,32 @@ const DEFAULT_BUTTONS: CtaButton[] = [
   },
 ];
 
+function CtaButtonLink({ btn }: { btn: CtaButton }) {
+  const className = `sal-btn sal-btn-${btn.variant ?? "gold"}`;
+  const style = { padding: "15px 36px", fontSize: "0.88rem" };
+
+  if (btn.external) {
+    return (
+      <a href={btn.href} className={className} style={style}>
+        {btn.icon}
+        {btn.label}
+      </a>
+    );
+  }
+
+  return (
+    <Link href={btn.href} className={className} style={style}>
+      {btn.icon}
+      {btn.label}
+    </Link>
+  );
+}
+
 export default function CtaBanner({
   heading,
   subtext,
   buttons = DEFAULT_BUTTONS,
-  note,
+  footer,
 }: CtaBannerProps) {
   return (
     <section
@@ -45,7 +64,6 @@ export default function CtaBanner({
         overflow: "hidden",
       }}
     >
-      {/* Gold radial glow */}
       <div
         style={{
           position: "absolute",
@@ -59,61 +77,53 @@ export default function CtaBanner({
         }}
       />
 
-      <div className="sal-container" style={{ position: "relative", textAlign: "center" }}>
-        {/* Gold scissors icon */}
-        <div
+      <div className="sal-container cta-dark-content" style={{ position: "relative", textAlign: "center" }}>
+        <Logo
+          size={96}
           className="anim-pulse"
-          style={{
-            width: 70,
-            height: 70,
-            borderRadius: 20,
-            background: "var(--grad-gold-btn)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            margin: "0 auto 28px",
-            boxShadow: "0 12px 40px rgba(201,151,59,0.4)",
-          }}
-        >
-          <Scissors style={{ width: 30, height: 30, color: "#0d0c0a", transform: "rotate(45deg)" }} />
-        </div>
+          style={{ margin: "0 auto 28px", boxShadow: "0 12px 40px rgba(201,151,59,0.4)" }}
+        />
 
-        <h2 className="sal-h2" style={{ marginBottom: 16, fontSize: "clamp(2rem, 4vw, 3rem)" }}>
+        <h2 className="sal-h2 cta-banner-heading" style={{ marginBottom: 16, fontSize: "clamp(2rem, 4vw, 3rem)" }}>
           {heading}
         </h2>
-        <p
-          style={{
-            color: "var(--text-secondary)",
-            fontSize: "1rem",
-            maxWidth: 420,
-            margin: "0 auto 40px",
-            lineHeight: 1.8,
-          }}
-        >
+        <p className="cta-banner-subtext" style={{ fontSize: "1rem", maxWidth: 500, margin: "0 auto 40px", lineHeight: 1.8 }}>
           {subtext}
         </p>
 
-        <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
+        <div
+          style={{
+            display: "flex",
+            gap: 16,
+            justifyContent: "center",
+            flexWrap: "wrap",
+            marginBottom: footer ? 28 : 0,
+          }}
+        >
           {buttons.map((btn) => (
-            <Link
-              key={btn.href + btn.label}
-              href={btn.href}
-              className={`sal-btn sal-btn-${btn.variant ?? "gold"}`}
-              style={{ padding: "15px 36px", fontSize: "0.88rem" }}
-            >
-              {btn.icon}
-              {btn.label}
-            </Link>
+            <CtaButtonLink key={btn.href + btn.label} btn={btn} />
           ))}
         </div>
 
-        {note && (
-          <p
-            style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: 32 }}
-            dangerouslySetInnerHTML={{ __html: note }}
-          />
-        )}
+        {footer && <div className="cta-banner-footer">{footer}</div>}
       </div>
     </section>
+  );
+}
+
+/** Default home/services CTA */
+export function DefaultCtaBanner() {
+  return (
+    <CtaBanner
+      heading={
+        <>
+          Book Your Appointment
+          <br />
+          <span className="text-gold">Today</span>
+        </>
+      }
+      subtext="Choose your service, pick your stylist, and select a time that works for you. Takes less than 2 minutes."
+      buttons={DEFAULT_BUTTONS}
+    />
   );
 }

@@ -16,3 +16,9 @@ export const IS_PROD = process.env.NODE_ENV === "production";
 export const VAPID_PUBLIC_KEY  = process.env.VAPID_PUBLIC_KEY  ?? "";
 export const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY ?? "";
 export const VAPID_EMAIL       = process.env.VAPID_EMAIL       ?? "mailto:admin@glamourstudio.com";
+
+// ── Email (Resend) ────────────────────────────────────────
+export const RESEND_API_KEY = process.env.RESEND_API_KEY ?? "";
+export const EMAIL_FROM     = process.env.EMAIL_FROM     ?? "Glamour Studio <onboarding@resend.dev>";
+export const APP_URL        = process.env.APP_URL        ?? "http://localhost:3000";
+export const ADMIN_EMAIL    = process.env.ADMIN_EMAIL    ?? "";

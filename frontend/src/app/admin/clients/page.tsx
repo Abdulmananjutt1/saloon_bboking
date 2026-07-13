@@ -15,16 +15,57 @@ export default function AdminClientsPage() {
 
   return (
     <div style={{ maxWidth: 1280, margin: "0 auto" }}>
+      <style>{`
+        @media (max-width: 768px) {
+          .admin-clients-header {
+            align-items: stretch !important;
+          }
+          .admin-clients-title {
+            font-size: 1.8rem !important;
+          }
+          .admin-clients-actions {
+            width: 100%;
+          }
+          .admin-clients-actions button {
+            flex: 1;
+            justify-content: center;
+            padding-inline: 12px !important;
+          }
+          .admin-clients-search {
+            max-width: none !important;
+          }
+          .admin-clients-table table {
+            min-width: 760px;
+          }
+          .admin-client-modal-overlay {
+            align-items: flex-end !important;
+            padding: 12px !important;
+          }
+          .admin-client-modal {
+            max-width: none !important;
+            max-height: calc(100dvh - 24px);
+            overflow-y: auto;
+            border-radius: 18px !important;
+            padding: 24px 18px !important;
+          }
+          .admin-client-form-actions {
+            flex-direction: column-reverse;
+          }
+          .admin-client-form-actions button {
+            width: 100%;
+          }
+        }
+      `}</style>
 
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16, marginBottom: 24 }}>
+      <div className="admin-clients-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16, marginBottom: 24 }}>
         <div>
-          <h1 style={{ fontSize: "2.4rem", fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.02em", marginBottom: 4, fontFamily: "var(--font-display), Georgia, serif" }}>
+          <h1 className="admin-clients-title" style={{ fontSize: "2.4rem", fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.02em", marginBottom: 4, fontFamily: "var(--font-display), Georgia, serif" }}>
             Clients
           </h1>
           <p style={{ fontSize: "0.82rem", color: "var(--text-muted)" }}>{clients.length} registered clients</p>
         </div>
-        <div style={{ display: "flex", gap: 10 }}>
+        <div className="admin-clients-actions" style={{ display: "flex", gap: 10 }}>
           <button style={{ display: "flex", alignItems: "center", gap: 7, padding: "10px 18px", borderRadius: 11, background: "var(--bg-card)", border: "1px solid var(--border-light)", color: "var(--text-secondary)", fontSize: "0.8rem", fontWeight: 600, cursor: "pointer" }}>
             <Download style={{ width: 14, height: 14 }} /> Export
           </button>
@@ -35,7 +76,7 @@ export default function AdminClientsPage() {
       </div>
 
       {/* Search */}
-      <div style={{ position: "relative", maxWidth: 360, marginBottom: 20 }}>
+      <div className="admin-clients-search" style={{ position: "relative", maxWidth: 360, marginBottom: 20 }}>
         <Search style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", width: 14, height: 14, color: "var(--text-muted)" }} />
         <input
           type="text" placeholder="Search by name, email or phone…"
@@ -53,7 +94,7 @@ export default function AdminClientsPage() {
             {search ? `No clients found for "${search}"` : "No clients yet. Add your first client above."}
           </div>
         ) : (
-          <div style={{ overflowX: "auto" }}>
+          <div className="admin-clients-table" style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr style={{ borderBottom: "1px solid var(--border-light)" }}>
@@ -99,9 +140,9 @@ export default function AdminClientsPage() {
 
       {/* ── Add Client Modal ── */}
       {showModal && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}
+        <div className="admin-client-modal-overlay" style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}
           onClick={(e) => { if (e.target === e.currentTarget) closeModal(); }}>
-          <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-light)", borderRadius: 24, padding: "32px 36px", width: "100%", maxWidth: 480, boxShadow: "0 32px 80px rgba(0,0,0,0.5)", position: "relative" }}>
+          <div className="admin-client-modal" style={{ background: "var(--bg-card)", border: "1px solid var(--border-light)", borderRadius: 24, padding: "32px 36px", width: "100%", maxWidth: 480, boxShadow: "0 32px 80px rgba(0,0,0,0.5)", position: "relative" }}>
 
             <button onClick={closeModal} style={{ position: "absolute", top: 18, right: 18, width: 32, height: 32, borderRadius: 8, background: "var(--bg-secondary)", border: "1px solid var(--border-light)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--text-muted)" }}>
               <X style={{ width: 14, height: 14 }} />
@@ -156,7 +197,7 @@ export default function AdminClientsPage() {
                     />
                   </div>
 
-                  <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
+                  <div className="admin-client-form-actions" style={{ display: "flex", gap: 10, marginTop: 4 }}>
                     <button type="button" onClick={closeModal} style={{ flex: 1, padding: "11px", borderRadius: 10, background: "var(--bg-secondary)", border: "1px solid var(--border-light)", color: "var(--text-secondary)", fontSize: "0.82rem", fontWeight: 600, cursor: "pointer" }}>
                       Cancel
                     </button>

@@ -1,10 +1,13 @@
 "use client";
 
-import { MessageSquare, CalendarDays, CheckCircle2 } from "lucide-react";
+import { useEffect } from "react";
+import { CalendarDays, CheckCircle2 } from "lucide-react";
 import { useNotifications } from "@/hooks/useNotifications";
 
 export default function NotificationsPage() {
-  const { notifs, loading, clearAll } = useNotifications();
+  const { notifs, loading, clearAll, markRead } = useNotifications();
+
+  useEffect(() => { markRead(); }, [markRead]);
 
   return (
     <div style={{ animation: "fadeIn 0.3s ease-out", maxWidth: 800 }}>
@@ -56,12 +59,10 @@ export default function NotificationsPage() {
               }}>
                 <div style={{
                   width: 40, height: 40, borderRadius: "50%", flexShrink: 0,
-                  background: n.type === "chat" ? "var(--status-confirmed-bg)" : "rgba(201,151,59,0.1)",
+                  background: "rgba(201,151,59,0.1)",
                   display: "flex", alignItems: "center", justifyContent: "center"
                 }}>
-                  {n.type === "chat"
-                    ? <MessageSquare style={{ width: 18, height: 18, color: "var(--status-confirmed)" }} />
-                    : <CalendarDays  style={{ width: 18, height: 18, color: "var(--gold)" }} />}
+                  <CalendarDays style={{ width: 18, height: 18, color: "var(--gold)" }} />
                 </div>
                 <div style={{ flex: 1 }}>
                   <p style={{ fontSize: "0.95rem", fontWeight: 600, color: "var(--text-primary)" }}>{n.title}</p>

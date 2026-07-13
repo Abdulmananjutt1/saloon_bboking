@@ -5,30 +5,33 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { ROUTES, APP_NAME } from "@/constants";
 import {
-  Scissors, LayoutDashboard, CalendarDays,
-  Users, UserCheck, BarChart3, LogOut, Settings, MessageSquare, Bell, ChevronUp, Wallet
+  LayoutDashboard, CalendarDays,
+  Users, UserCheck, BarChart3, LogOut, Settings, MessageSquare, Bell, ChevronUp, Wallet, Scissors, Menu, X
 } from "lucide-react";
-import { useAdminUnread } from "@/hooks/useAdminUnread";
+import { Logo } from "@/components/ui/Logo";
+import { useAdminNavBadges } from "@/hooks/useAdminNavBadges";
+import { RedBadge } from "@/components/ui/RedBadge";
 import { ToastContainer, useToast } from "@/components/ui/Toast";
 import { clearSession, pushSessionToast, popSessionToast } from "@/lib/session";
 
 const NAV = [
   { label: "Dashboard",     href: ROUTES.ADMIN,           icon: LayoutDashboard },
-  { label: "Bookings",      href: ROUTES.ADMIN_BOOKINGS,  icon: CalendarDays },
+  { label: "Bookings",      href: ROUTES.ADMIN_BOOKINGS,  icon: CalendarDays,  badgeKey: "bookings" },
   { label: "Services",      href: ROUTES.ADMIN_SERVICES,  icon: Scissors },
   { label: "Stylists",      href: ROUTES.ADMIN_STYLISTS,  icon: Users },
   { label: "Clients",       href: ROUTES.ADMIN_CLIENTS,   icon: UserCheck },
   { label: "Analytics",     href: ROUTES.ADMIN_ANALYTICS, icon: BarChart3 },
   { label: "Payroll",       href: ROUTES.ADMIN_PAYROLL,   icon: Wallet },
-  { label: "Chat",          href: "/admin/chat",          icon: MessageSquare, showUnread: true },
-  { label: "Notifications", href: "/admin/notifications", icon: Bell },
+  { label: "Chat",          href: "/admin/chat",          icon: MessageSquare, badgeKey: "chat" },
+  { label: "Notifications", href: "/admin/notifications", icon: Bell,          badgeKey: "notifications" },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const { totalUnread } = useAdminUnread();
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const { getBadge } = useAdminNavBadges();
   const { toasts, toast, remove } = useToast();
 
   // Show toast from sessionStorage (e.g. after login)
@@ -47,12 +50,25 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const active = (href: string) =>
     href === ROUTES.ADMIN ? pathname === href : pathname.startsWith(href);
 
+  useEffect(() => {
+    setShowMobileMenu(false);
+    setShowProfileMenu(false);
+  }, [pathname]);
+
   return (
-    <div style={{ minHeight: "100vh", display: "flex", background: "var(--bg-primary)" }}>
+    <div className="admin-shell" style={{ height: "100vh", display: "flex", background: "var(--bg-primary)", overflow: "hidden" }}>
       <ToastContainer toasts={toasts} onRemove={remove} />
 
+      {showMobileMenu && (
+        <button
+          aria-label="Close menu"
+          className="admin-mobile-overlay"
+          onClick={() => setShowMobileMenu(false)}
+        />
+      )}
+
       {/* ── Sidebar ── */}
-      <aside style={{
+      <aside className={showMobileMenu ? "admin-sidebar admin-sidebar-open" : "admin-sidebar"} style={{
         width: 240, flexShrink: 0,
         background: "var(--bg-secondary)",
         borderRight: "1px solid var(--border-light)",
@@ -62,14 +78,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         {/* Logo */}
         <div style={{ padding: "24px 20px", borderBottom: "1px solid var(--border-light)" }}>
           <Link href={ROUTES.HOME} style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
-            <div style={{
-              width: 36, height: 36, borderRadius: 10,
-              background: "var(--grad-gold-btn)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              boxShadow: "0 4px 16px rgba(201,151,59,0.3)"
-            }}>
-              <Scissors style={{ width: 16, height: 16, color: "#0d0c0a", transform: "rotate(45deg)" }} />
-            </div>
+            <Logo size={54} />
             <div>
               <p style={{ fontSize: "0.88rem", fontWeight: 800, color: "var(--text-primary)", lineHeight: 1 }}>{APP_NAME}</p>
               <p style={{ fontSize: "0.58rem", textTransform: "uppercase", letterSpacing: "0.25em", color: "var(--text-muted)", marginTop: 2 }}>Admin Panel</p>
@@ -78,14 +87,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
 
         {/* Nav */}
-        <nav style={{ flex: 1, padding: "16px 12px", overflowY: "auto", display: "flex", flexDirection: "column", gap: 2 }}>
-          {NAV.map(({ label, href, icon: Icon, showUnread }) => {
+        <nav style={{ flex: 1, padding: "16px 12px", overflow: "hidden", display: "flex", flexDirection: "column", gap: 2 }}>
+          {NAV.map(({ label, href, icon: Icon, badgeKey }) => {
             const on    = active(href);
-            const badge = showUnread ? totalUnread : 0;
+            const badge = badgeKey ? getBadge(href) : 0;
             return (
               <Link
                 key={href}
                 href={href}
+                onClick={() => setShowMobileMenu(false)}
                 style={{
                   display: "flex", alignItems: "center", gap: 10,
                   padding: "10px 12px", borderRadius: 10,
@@ -99,18 +109,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               >
                 <Icon style={{ width: 15, height: 15, color: on ? "var(--gold)" : "var(--text-muted)", flexShrink: 0 }} />
                 <span style={{ flex: 1 }}>{label}</span>
-                {badge > 0 && (
-                  <span style={{
-                    minWidth: 18, height: 18, borderRadius: 99,
-                    background: "var(--grad-gold-btn)",
-                    color: "#0d0c0a", fontSize: "0.6rem", fontWeight: 800,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    padding: "0 5px", flexShrink: 0,
-                    boxShadow: "0 2px 8px rgba(201,151,59,0.4)"
-                  }}>
-                    {badge > 99 ? "99+" : badge}
-                  </span>
-                )}
+                <RedBadge count={badge} />
               </Link>
             );
           })}
@@ -211,10 +210,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </aside>
 
       {/* ── Main area ── */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: "100vh", overflow: "hidden" }}>
+      <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", height: "100vh", minHeight: 0, overflow: "hidden" }}>
+        <header className="admin-mobile-header">
+          <Link href={ROUTES.HOME} className="admin-mobile-brand">
+            <Logo size={36} />
+            <span>{APP_NAME}</span>
+          </Link>
+          <button
+            aria-label={showMobileMenu ? "Close menu" : "Open menu"}
+            className="admin-mobile-menu-button"
+            onClick={() => setShowMobileMenu((v) => !v)}
+          >
+            {showMobileMenu ? <X size={19} /> : <Menu size={19} />}
+          </button>
+        </header>
 
         {/* Page content */}
-        <main style={{ flex: 1, padding: 28, overflowY: "auto" }}>
+        <main className="admin-main-content" style={{ flex: 1, minHeight: 0, padding: 28, overflowY: "auto", overflowX: "hidden" }}>
           {children}
         </main>
       </div>
@@ -223,6 +235,75 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(4px); }
           to { opacity: 1; transform: translateY(0); }
+        }
+        .admin-mobile-header,
+        .admin-mobile-overlay {
+          display: none;
+        }
+        @media (max-width: 768px) {
+          .admin-shell {
+            display: block !important;
+          }
+          .admin-sidebar {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            bottom: 0 !important;
+            z-index: 60 !important;
+            width: min(82vw, 300px) !important;
+            height: 100dvh !important;
+            transform: translateX(-100%);
+            transition: transform 0.24s ease;
+            box-shadow: 20px 0 45px rgba(0,0,0,0.28);
+          }
+          .admin-sidebar-open {
+            transform: translateX(0);
+          }
+          .admin-mobile-overlay {
+            display: block;
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            border: 0;
+            background: rgba(13, 12, 10, 0.45);
+            backdrop-filter: blur(2px);
+          }
+          .admin-mobile-header {
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border-light);
+            background: var(--bg-secondary);
+            position: sticky;
+            top: 0;
+            z-index: 30;
+          }
+          .admin-mobile-brand {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-size: 0.86rem;
+            font-weight: 800;
+          }
+          .admin-mobile-menu-button {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            border: 1px solid rgba(201,151,59,0.22);
+            background: rgba(201,151,59,0.08);
+            color: var(--gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+          .admin-main-content {
+            padding: 16px !important;
+            height: calc(100dvh - 64px);
+          }
         }
       `}</style>
     </div>

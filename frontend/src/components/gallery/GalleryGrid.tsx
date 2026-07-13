@@ -67,21 +67,14 @@ export default function GalleryGrid({ images }: { images: GalleryImage[] }) {
       </div>
 
       {/* Masonry grid */}
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(4, 1fr)",
-        gridAutoRows: "220px",
-        gap: 16
-      }}>
+      <div className="gallery-masonry-grid">
         {filtered.map((img, i) => {
           const large = active === "all" && LARGE_INDICES.has(i);
           return (
             <div
               key={`${img.id}-${i}`}
-              className="gallery-img-wrap"
+              className={`gallery-img-wrap${large ? " gallery-masonry-large" : ""}`}
               style={{
-                gridColumn: large ? "span 2" : "span 1",
-                gridRow:    large ? "span 2" : "span 1",
                 borderRadius: "var(--r-lg)",
                 overflow: "hidden"
               }}

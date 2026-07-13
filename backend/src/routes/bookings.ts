@@ -3,6 +3,12 @@ import prisma from "../db";
 import { validateBooking, hasErrors } from "../validations";
 import { BookingStatus } from "@prisma/client";
 import { notifyAdmins, notifyClient } from "../lib/push";
+import {
+  buildBookingDetails,
+  sendBookingReceivedEmail,
+  sendBookingStatusEmail,
+  sendAdminNewBookingEmail,
+} from "../lib/email";
 import { requireAdmin, AuthRequest } from "../middleware/auth";
 
 const router = Router();
@@ -11,6 +17,8 @@ const router = Router();
 function formatBooking(b: any) {
   return {
     ...b,
+    serviceName: b.serviceName ?? b.service?.name ?? "Appointment",
+    stylistName: b.stylistName ?? b.stylist?.name ?? "Glamour Studio",
     date: b.date.toISOString().split("T")[0],
     status: b.status.toLowerCase(), // frontend expects lowercase (pending, confirmed, etc.)
   };
@@ -34,6 +42,10 @@ router.get("/", async (req: Request, res: Response) => {
 
     const bookings = await prisma.booking.findMany({
       where,
+      include: {
+        service: { select: { name: true } },
+        stylist: { select: { name: true } },
+      },
       orderBy: { createdAt: "desc" },
     });
 
@@ -53,6 +65,10 @@ router.get("/:id", async (req: Request, res: Response) => {
   try {
     const booking = await prisma.booking.findUnique({
       where: { id: req.params.id },
+      include: {
+        service: { select: { name: true } },
+        stylist: { select: { name: true } },
+      },
     });
     if (!booking) return res.status(404).json({ success: false, error: "Booking not found" });
     res.json({ success: true, data: formatBooking(booking) });
@@ -209,7 +225,10 @@ router.post("/", async (req: Request, res: Response) => {
       }
     });
 
-    res.status(201).json({ success: true, data: formatBooking(booking) });
+    res.status(201).json({
+      success: true,
+      data: formatBooking({ ...booking, service: { name: serviceName }, stylist: { name: stylist.name } }),
+    });
 
     // ── Push notification to admin ──────────────────────────
     notifyAdmins({
@@ -219,6 +238,18 @@ router.post("/", async (req: Request, res: Response) => {
       url:   "/admin/bookings",
       data:  { bookingId: booking.id },
     }).catch(() => {});
+
+    const emailDetails = buildBookingDetails({
+      bookingId:    booking.id,
+      customerName: body.name.trim(),
+      serviceName,
+      stylistName:  stylist.name,
+      date:         bookingDate,
+      time:         body.time,
+      price,
+    });
+    sendBookingReceivedEmail(booking.customerEmail, emailDetails);
+    sendAdminNewBookingEmail(emailDetails);
 
   } catch (err) {
     console.error("[POST /bookings]", err);
@@ -235,12 +266,19 @@ router.patch("/:id", async (req: Request, res: Response) => {
       return res.status(422).json({ success: false, error: `Status must be one of: ${valid.join(", ")}` });
     }
 
-    const booking = await prisma.booking.findUnique({ where: { id: req.params.id } });
+    const booking = await prisma.booking.findUnique({
+      where: { id: req.params.id },
+      include: { service: true, stylist: true },
+    });
     if (!booking) return res.status(404).json({ success: false, error: "Booking not found" });
 
     const updated = await prisma.booking.update({
       where: { id: req.params.id },
       data: { status: status.toUpperCase() as BookingStatus },
+      include: {
+        service: { select: { name: true } },
+        stylist: { select: { name: true } },
+      },
     });
 
     res.json({ success: true, data: formatBooking(updated) });
@@ -261,6 +299,21 @@ router.patch("/:id", async (req: Request, res: Response) => {
         url:   "/dashboard",
         data:  { bookingId: updated.id, status },
       }).catch(() => {});
+
+      const emailDetails = buildBookingDetails({
+        bookingId:    updated.id,
+        customerName: booking.customerName,
+        serviceName:  booking.service.name,
+        stylistName:  booking.stylist.name,
+        date:         booking.date,
+        time:         booking.time,
+        price:        booking.price,
+      });
+      sendBookingStatusEmail(
+        booking.customerEmail,
+        emailDetails,
+        status as "confirmed" | "completed" | "cancelled" | "pending"
+      );
     }
   } catch (err) {
     console.error("[PATCH /bookings/:id]", err);
@@ -433,7 +486,10 @@ router.post("/admin", requireAdmin, async (req: AuthRequest, res: Response) => {
       }
     });
 
-    res.status(201).json({ success: true, data: formatBooking(booking) });
+    res.status(201).json({
+      success: true,
+      data: formatBooking({ ...booking, service: { name: serviceName }, stylist: { name: stylist.name } }),
+    });
 
     notifyClient(targetUser.email, {
       title: "📅 Booking Created by Admin",
@@ -442,6 +498,17 @@ router.post("/admin", requireAdmin, async (req: AuthRequest, res: Response) => {
       url:   "/dashboard",
       data:  { bookingId: booking.id },
     }).catch(() => {});
+
+    const emailDetails = buildBookingDetails({
+      bookingId:    booking.id,
+      customerName: targetUser.name,
+      serviceName,
+      stylistName:  stylist.name,
+      date:         bookingDate,
+      time:         bodyWithUser.time,
+      price,
+    });
+    sendBookingStatusEmail(targetUser.email, emailDetails, "confirmed");
 
   } catch (err) {
     console.error("[POST /bookings/admin]", err);

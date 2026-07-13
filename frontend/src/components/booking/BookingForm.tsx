@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import Image from "next/image";
 import { TIME_SLOTS, ROUTES } from "@/constants";
 import { formatPrice, formatDuration, getTodayDate } from "@/lib/utils";
@@ -13,7 +13,8 @@ import {
 } from "lucide-react";
 import { validateBookingForm, hasErrors, type ValidationError } from "@/lib/validations";
 import { ToastContainer, useToast } from "@/components/ui/Toast";
-import { servicesApi, stylistsApi, bookingsApi } from "@/lib/api";
+import { servicesApi, stylistsApi, bookingsApi, clientsApi } from "@/lib/api";
+import { getSession, isAdmin } from "@/lib/session";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 type ApiService = {
@@ -36,57 +37,44 @@ type ApiStylist = {
   slots?: { id: string; stylistId: string; time: string }[];
   availability?: ApiStylistAvailability[];
 };
+type ApiClient = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  totalVisits?: number;
+};
 
 interface StepDef { n: number; label: string; icon: React.ComponentType<{ style?: React.CSSProperties }> }
 
 // ── Step Indicator (outside component to avoid re-mount on render) ────────────
 function StepIndicator({ steps, step }: { steps: StepDef[]; step: number }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 36 }}>
+    <div className="booking-steps" role="list" aria-label="Booking progress">
       {steps.map((s, i) => {
         const done = step > s.n;
         const active = step === s.n;
         const Icon = s.icon;
         return (
-          <div key={s.n} style={{ display: "flex", alignItems: "center" }}>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-              <div style={{
-                width: 44, height: 44, borderRadius: "50%",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                transition: "all 0.3s ease",
-                background: done
-                  ? "rgba(52,211,153,0.15)"
-                  : active
-                  ? "var(--grad-gold-btn)"
-                  : "var(--bg-secondary)",
-                border: done
-                  ? "1.5px solid rgba(52,211,153,0.4)"
-                  : active
-                  ? "none"
-                  : "1.5px solid var(--border-light)",
-                boxShadow: active ? "0 4px 20px rgba(201,151,59,0.35)" : "none"
-              }}>
+          <div key={s.n} className="booking-step-wrap" role="listitem">
+            <div className="booking-step-node">
+              <div
+                className={`booking-step-circle${active ? " booking-step-circle--active" : ""}${done ? " booking-step-circle--done" : ""}`}
+              >
                 {done
                   ? <CheckCircle style={{ width: 18, height: 18, color: "#34d399" }} />
-                  : <Icon style={{ width: 16, height: 16, color: active ? "#0d0c0a" : "var(--text-muted)", transform: s.n === 1 ? "rotate(45deg)" : "none" }} />
+                  : <Icon style={{ width: 16, height: 16, color: active ? "#0d0c0a" : "var(--text-muted)", transform: s.label === "Service" ? "rotate(45deg)" : "none" }} />
                 }
               </div>
-              <span style={{
-                fontSize: "0.62rem", fontWeight: 700,
-                textTransform: "uppercase", letterSpacing: "0.12em",
-                color: active ? "var(--gold)" : done ? "#34d399" : "var(--text-muted)"
-              }}>
+              <span className={`booking-step-label${active ? " booking-step-label--active" : ""}${done ? " booking-step-label--done" : ""}`}>
                 {s.label}
               </span>
             </div>
             {i < steps.length - 1 && (
-              <div style={{
-                width: 60, height: 1.5, marginBottom: 20, marginInline: 6,
-                background: step > s.n
-                  ? "linear-gradient(to right, rgba(52,211,153,0.5), rgba(52,211,153,0.2))"
-                  : "var(--border-light)",
-                transition: "background 0.4s ease"
-              }} />
+              <div
+                className={`booking-step-line${step > s.n ? " booking-step-line--done" : ""}`}
+                aria-hidden
+              />
             )}
           </div>
         );
@@ -101,37 +89,23 @@ function NavButtons({ step, loading, nextDisabled, onNext, onBack, submitMode }:
   onNext?: () => void; onBack?: () => void; submitMode?: boolean;
 }) {
   return (
-    <div style={{ display: "flex", justifyContent: step === 1 ? "flex-end" : "space-between", marginTop: 28 }}>
+    <div className={`booking-nav-buttons${step === 1 ? " booking-nav-buttons--end" : ""}`}>
       {step > 1 && (
-        <button type="button" onClick={onBack} style={{
-          display: "flex", alignItems: "center", gap: 6,
-          padding: "11px 22px", borderRadius: 11,
-          background: "var(--bg-secondary)", border: "1px solid var(--border-light)",
-          color: "var(--text-secondary)", fontSize: "0.82rem", fontWeight: 600, cursor: "pointer"
-        }}>
-          <ChevronLeft style={{ width: 15, height: 15 }} /> Back
+        <button type="button" onClick={onBack} className="booking-btn-back">
+          <ChevronLeft style={{ width: 15, height: 15, flexShrink: 0 }} /> Back
         </button>
       )}
       <button
         type={submitMode ? "submit" : "button"}
         onClick={!submitMode ? onNext : undefined}
         disabled={nextDisabled}
-        style={{
-          display: "flex", alignItems: "center", gap: 7,
-          padding: "12px 28px", borderRadius: 11,
-          background: nextDisabled ? "var(--bg-secondary)" : "var(--grad-gold-btn)",
-          border: nextDisabled ? "1px solid var(--border-light)" : "none",
-          color: nextDisabled ? "var(--text-muted)" : "#0d0c0a",
-          fontSize: "0.82rem", fontWeight: 700, cursor: nextDisabled ? "not-allowed" : "pointer",
-          boxShadow: nextDisabled ? "none" : "0 4px 20px rgba(201,151,59,0.3)",
-          transition: "all 0.2s", opacity: nextDisabled ? 0.5 : 1
-        }}
+        className="booking-btn-next"
       >
         {submitMode
           ? loading
-            ? <><span style={{ width: 14, height: 14, borderRadius: "50%", border: "2px solid rgba(13,12,10,0.3)", borderTopColor: "#0d0c0a", animation: "spin 0.7s linear infinite", display: "inline-block" }} /> Confirming…</>
-            : <><Scissors style={{ width: 14, height: 14, transform: "rotate(45deg)" }} /> Confirm Booking</>
-          : <>Next <ChevronRight style={{ width: 15, height: 15 }} /></>
+            ? <><span className="booking-btn-spinner" /> Confirming…</>
+            : <><Scissors style={{ width: 14, height: 14, flexShrink: 0, transform: "rotate(45deg)" }} /> Confirm Booking</>
+          : <>Next <ChevronRight style={{ width: 15, height: 15, flexShrink: 0 }} /></>
         }
       </button>
     </div>
@@ -143,10 +117,13 @@ interface Props {
   preSelectedStylist?: string;
 }
 
-type Step = 1 | 2 | 3 | 4;
+type Step = 1 | 2 | 3 | 4 | 5;
 
 export default function BookingForm({ preSelectedService, preSelectedStylist }: Props) {
+  const confirmationRef = useRef<HTMLDivElement | null>(null);
   const [step, setStep] = useState<Step>(preSelectedService ? 2 : 1);
+  const bookingTopRef = useRef<HTMLDivElement | null>(null);
+  const scrollAfterStepChangeRef = useRef(false);
   const [selectedService, setSelectedService] = useState(preSelectedService ?? "");
   const [selectedStylist, setSelectedStylist] = useState(preSelectedStylist ?? "");
   const [selectedDate, setSelectedDate] = useState(getTodayDate());
@@ -156,6 +133,12 @@ export default function BookingForm({ preSelectedService, preSelectedStylist }: 
   const [apiError, setApiError] = useState("");
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
+  const [waitlistRequested, setWaitlistRequested] = useState(false);
+  const [bookingAsAdmin, setBookingAsAdmin] = useState(false);
+  const [adminClients, setAdminClients] = useState<ApiClient[]>([]);
+  const [adminClientsLoading, setAdminClientsLoading] = useState(false);
+  const [adminClientSearch, setAdminClientSearch] = useState("");
+  const [selectedAdminClientId, setSelectedAdminClientId] = useState("");
   const { toasts, toast, remove } = useToast();
 
   // Custom package state
@@ -172,32 +155,41 @@ export default function BookingForm({ preSelectedService, preSelectedStylist }: 
   // Search state
   const [serviceSearch, setServiceSearch] = useState("");
 
-  const [user, setUser] = useState<{ email: string; name: string; phone?: string } | null>(null);
-  const [checkingAuth, setCheckingAuth] = useState(true);
-
   // API-fetched data replacing static imports
   const [SERVICES, setServices] = useState<ApiService[]>([]);
   const [STYLISTS, setStylists] = useState<ApiStylist[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is logged in
-    try {
-      const stored = localStorage.getItem("user");
-      if (stored) {
-        const u = JSON.parse(stored);
-        setUser(u);
-        setForm((f) => ({
-          ...f,
-          name: u.name || "",
-          email: u.email || "",
-          phone: u.phone || ""
-        }));
-      }
-    } catch (e) {
-      console.error(e);
+    const session = getSession();
+    const adminSession = isAdmin(session);
+    setBookingAsAdmin(adminSession);
+
+    if (adminSession) {
+      setStep(1);
     }
-    setCheckingAuth(false);
+
+    if (session && !adminSession) {
+      setForm((f) => ({
+        ...f,
+        name: session.name || "",
+        email: session.email || "",
+        phone: session.phone || ""
+      }));
+    }
+
+    if (adminSession) {
+      setAdminClientsLoading(true);
+      clientsApi.getAll(undefined, "name")
+        .then((res) => {
+          const data = res as { success: boolean; data: ApiClient[] };
+          if (data.success) setAdminClients(data.data);
+        })
+        .catch(() => {
+          toast("error", "Clients not loaded", "Could not fetch client options. You can still type details manually.");
+        })
+        .finally(() => setAdminClientsLoading(false));
+    }
 
     Promise.all([
       servicesApi.getAll() as Promise<{ success: boolean; data: ApiService[] }>,
@@ -211,8 +203,51 @@ export default function BookingForm({ preSelectedService, preSelectedStylist }: 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    if (preSelectedStylist || selectedStylist || STYLISTS.length === 0) return;
+    const favoriteId = localStorage.getItem("gs_favorite_stylist_id");
+    if (favoriteId && STYLISTS.some((s) => s.id === favoriteId && s.available)) {
+      setSelectedStylist(favoriteId);
+      if (!preSelectedService && !bookingAsAdmin) setStep(2);
+    }
+  }, [STYLISTS, preSelectedStylist, preSelectedService, selectedStylist, bookingAsAdmin]);
+
+  useEffect(() => {
+    if (!scrollAfterStepChangeRef.current) return;
+    scrollAfterStepChangeRef.current = false;
+
+    requestAnimationFrame(() => {
+      const el = bookingTopRef.current;
+      if (!el) return;
+
+      const top = el.getBoundingClientRect().top + window.scrollY - 110;
+      window.scrollTo({ top: Math.max(top, 0), behavior: "smooth" });
+    });
+  }, [step]);
+
+  useEffect(() => {
+    if (!done) return;
+
+    requestAnimationFrame(() => {
+      const el = confirmationRef.current;
+      if (!el) return;
+
+      const top = el.getBoundingClientRect().top + window.scrollY - 120;
+      window.scrollTo({ top: Math.max(top, 0), behavior: "smooth" });
+    });
+  }, [done]);
+
   const service = SERVICES.find((s) => s.id === selectedService);
   const stylist = STYLISTS.find((s) => s.id === selectedStylist);
+  const serviceStep: Step = bookingAsAdmin ? 2 : 1;
+  const stylistStep: Step = bookingAsAdmin ? 3 : 2;
+  const dateStep: Step = bookingAsAdmin ? 4 : 3;
+  const detailsStep: Step = bookingAsAdmin ? 5 : 4;
+
+  const goToStep = (nextStep: Step) => {
+    scrollAfterStepChangeRef.current = true;
+    setStep(nextStep);
+  };
 
   // Custom package computed values
   const customServiceObjects = SERVICES.filter((s) => customServices.includes(s.id));
@@ -257,6 +292,32 @@ export default function BookingForm({ preSelectedService, preSelectedStylist }: 
     );
   }, [SERVICES, serviceSearch]);
 
+  const filteredAdminClients = useMemo(() => {
+    const q = adminClientSearch.toLowerCase().trim();
+    if (!q) return adminClients;
+    return adminClients.filter((client) =>
+      client.name.toLowerCase().includes(q) ||
+      client.email.toLowerCase().includes(q) ||
+      client.phone.includes(q)
+    );
+  }, [adminClients, adminClientSearch]);
+
+  const selectAdminClient = (client: ApiClient) => {
+    setSelectedAdminClientId(client.id);
+    setForm((f) => ({
+      ...f,
+      name: client.name,
+      email: client.email,
+      phone: client.phone,
+    }));
+    setErrors((prev) => ({ ...prev, name: "", email: "", phone: "" }));
+  };
+
+  const clearAdminClient = () => {
+    setSelectedAdminClientId("");
+    setForm((f) => ({ ...f, name: "", email: "", phone: "" }));
+  };
+
   // Toggle a service in custom package
   const toggleCustomService = (id: string) => {
     setCustomServices((prev) =>
@@ -264,12 +325,20 @@ export default function BookingForm({ preSelectedService, preSelectedStylist }: 
     );
   };
 
-  const steps: StepDef[] = [
-    { n: 1, label: "Service",    icon: Scissors },
-    { n: 2, label: "Stylist",    icon: User },
-    { n: 3, label: "Date & Time",icon: Calendar },
-    { n: 4, label: "Details",    icon: CheckCircle },
-  ];
+  const steps: StepDef[] = bookingAsAdmin
+    ? [
+        { n: 1, label: "Client",     icon: User },
+        { n: 2, label: "Service",    icon: Scissors },
+        { n: 3, label: "Stylist",    icon: User },
+        { n: 4, label: "Date & Time",icon: Calendar },
+        { n: 5, label: "Details",    icon: CheckCircle },
+      ]
+    : [
+        { n: 1, label: "Service",    icon: Scissors },
+        { n: 2, label: "Stylist",    icon: User },
+        { n: 3, label: "Date & Time",icon: Calendar },
+        { n: 4, label: "Details",    icon: CheckCircle },
+      ];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -342,7 +411,7 @@ export default function BookingForm({ preSelectedService, preSelectedStylist }: 
         if (data.errors) {
           setErrors(data.errors);
           if (data.errors.time) {
-            setStep(3);
+            goToStep(dateStep);
             toast("error", "Time Slot Unavailable", data.errors.time);
           } else {
             toast("error", "Booking Failed", Object.values(data.errors)[0] as string);
@@ -366,10 +435,15 @@ export default function BookingForm({ preSelectedService, preSelectedStylist }: 
     }
   };
 
+  const requestWaitlist = () => {
+    setWaitlistRequested(true);
+    toast("success", "Waitlist request saved", "We will notify you if a slot opens for this stylist.");
+  };
+
   /* ── Confirmed screen ── */
   if (done) {
     return (
-      <div style={{
+      <div ref={confirmationRef} style={{
         background: "var(--bg-card)", border: "1px solid rgba(52,211,153,0.25)",
         borderRadius: 28, padding: "56px 40px", textAlign: "center",
         boxShadow: "0 20px 60px rgba(52,211,153,0.08)"
@@ -419,59 +493,99 @@ export default function BookingForm({ preSelectedService, preSelectedStylist }: 
     );
   }
 
-  if (!checkingAuth && !user) {
-    const redirectUrl = typeof window !== "undefined"
-      ? encodeURIComponent(window.location.pathname + window.location.search)
-      : "";
-
-    return (
-      <div style={{
-        background: "var(--bg-card)", border: "1px solid var(--border-light)",
-        borderRadius: 28, padding: "56px 40px", textAlign: "center",
-        boxShadow: "var(--shadow-card)", display: "flex", flexDirection: "column",
-        alignItems: "center", justifyContent: "center", gap: 20
-      }}>
-        <div style={{
-          width: 70, height: 70, borderRadius: "50%",
-          background: "rgba(201,151,59,0.1)", border: "1px solid rgba(201,151,59,0.25)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
-          <User style={{ width: 32, height: 32, color: "var(--gold)" }} />
-        </div>
-        <div>
-          <h2 style={{ fontSize: "1.4rem", fontWeight: 800, color: "var(--text-primary)", marginBottom: 10 }}>
-            Login Required
-          </h2>
-          <p style={{ fontSize: "0.86rem", color: "var(--text-secondary)", maxWidth: 440, margin: "0 auto", lineHeight: 1.6 }}>
-            Please sign in or create an account to book your appointment. This allows you to track your booking history, manage status, and chat with your stylist.
-          </p>
-        </div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 10 }}>
-          <a href={`${ROUTES.LOGIN}?redirect=${redirectUrl}`} className="sal-btn sal-btn-gold" style={{ padding: "12px 28px", fontSize: "0.8rem" }}>
-            Sign In
-          </a>
-          <a href={`${ROUTES.REGISTER}?redirect=${redirectUrl}`} className="sal-btn sal-btn-outline" style={{ padding: "11px 26px", fontSize: "0.8rem" }}>
-            Create Account
-          </a>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <div ref={bookingTopRef} aria-hidden="true" />
       <StepIndicator steps={steps} step={step} />
 
-      <div style={{
-        background: "var(--bg-card)",
-        border: "1px solid var(--border-light)",
-        borderRadius: 24, padding: "32px 36px",
-        boxShadow: "var(--shadow-card)"
-      }}>
+      <div className="booking-form-card">
+        {bookingAsAdmin && step === 1 && (
+          <div style={{ background: "rgba(255,255,255,0.025)", border: "1px solid var(--border-light)", borderRadius: 16, padding: "16px 18px", marginBottom: 22 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 12 }}>
+              <div>
+                <p style={{ fontSize: "0.67rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.15em", color: "var(--gold)", marginBottom: 4 }}>
+                  Select Client
+                </p>
+                <p style={{ fontSize: "0.76rem", color: "var(--text-muted)" }}>
+                  Choose who this booking is for.
+                </p>
+              </div>
+              {selectedAdminClientId && (
+                <button type="button" onClick={clearAdminClient} style={{ border: "1px solid var(--border-light)", background: "var(--bg-secondary)", color: "var(--text-secondary)", borderRadius: 9, padding: "8px 11px", fontSize: "0.74rem", fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>
+                  New Client
+                </button>
+              )}
+            </div>
+
+            <div style={{ position: "relative", marginBottom: 12 }}>
+              <Search style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", width: 14, height: 14, color: "var(--text-muted)" }} />
+              <input
+                type="text"
+                value={adminClientSearch}
+                onChange={(e) => setAdminClientSearch(e.target.value)}
+                placeholder="Search client by name, email, or phone..."
+                style={{
+                  width: "100%",
+                  background: "var(--bg-secondary)",
+                  border: "1.5px solid var(--border-light)",
+                  borderRadius: 11,
+                  padding: "11px 14px 11px 36px",
+                  fontSize: "0.84rem",
+                  color: "var(--text-primary)",
+                  outline: "none",
+                }}
+              />
+            </div>
+
+            {adminClientsLoading ? (
+              <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", padding: "8px 0" }}>Loading clients...</p>
+            ) : filteredAdminClients.length === 0 ? (
+              <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", padding: "8px 0" }}>No clients found.</p>
+            ) : (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))", gap: 8, maxHeight: 150, overflowY: "auto", paddingRight: 2 }}>
+                {filteredAdminClients.slice(0, 8).map((client) => {
+                  const selected = selectedAdminClientId === client.id;
+                  return (
+                    <button
+                      key={client.id}
+                      type="button"
+                      onClick={() => selectAdminClient(client)}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 10,
+                        textAlign: "left",
+                        border: `1.5px solid ${selected ? "rgba(201,151,59,0.6)" : "var(--border-light)"}`,
+                        background: selected ? "rgba(201,151,59,0.08)" : "var(--bg-secondary)",
+                        borderRadius: 11,
+                        padding: "10px 12px",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <div style={{ width: 32, height: 32, borderRadius: "50%", flexShrink: 0, background: selected ? "var(--grad-gold-btn)" : "var(--bg-card)", display: "flex", alignItems: "center", justifyContent: "center", color: selected ? "#0d0c0a" : "var(--text-muted)", fontSize: "0.78rem", fontWeight: 900 }}>
+                        {client.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <p style={{ fontSize: "0.8rem", fontWeight: 800, color: "var(--text-primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{client.name}</p>
+                        <p style={{ fontSize: "0.68rem", color: "var(--text-muted)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{client.email}</p>
+                      </div>
+                      {selected && <CheckCircle style={{ width: 15, height: 15, color: "var(--gold)", flexShrink: 0 }} />}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            <NavButtons
+              step={step}
+              nextDisabled={!selectedAdminClientId}
+              onNext={() => goToStep(serviceStep)}
+            />
+          </div>
+        )}
 
         {/* ══ STEP 1 — Service ══ */}
-        {step === 1 && (
+        {step === serviceStep && (
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
               <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(201,151,59,0.1)", border: "1px solid rgba(201,151,59,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -488,7 +602,7 @@ export default function BookingForm({ preSelectedService, preSelectedStylist }: 
             ) : (
               <>
                 {/* ── Mode toggle ── */}
-                <div style={{ display: "flex", gap: 10, marginBottom: 18 }}>
+                <div className="booking-mode-toggle">
                   <button
                     type="button"
                     onClick={() => { setIsCustomPackage(false); setCustomServices([]); setCustomItems([]); setShowAddItem(false); }}
@@ -586,7 +700,7 @@ export default function BookingForm({ preSelectedService, preSelectedStylist }: 
                 )}
 
                 {/* ── Service grid ── */}
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 12, maxHeight: 480, overflowY: "auto", paddingRight: 4 }}>
+                <div className="booking-service-grid">
                   {filteredServices.map((s) => {
                     const selectedSingle = !isCustomPackage && selectedService === s.id;
                     const selectedCustom = isCustomPackage && customServices.includes(s.id);
@@ -721,7 +835,7 @@ export default function BookingForm({ preSelectedService, preSelectedStylist }: 
                         <p style={{ fontSize: "0.72rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--gold)", marginBottom: 14 }}>
                           Custom Service Details
                         </p>
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 14 }}>
+                        <div className="booking-custom-fields">
                           {/* Name */}
                           <div style={{ gridColumn: "1 / -1" }}>
                             <label style={{ display: "block", fontSize: "0.65rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: "var(--text-muted)", marginBottom: 6 }}>
@@ -855,7 +969,7 @@ export default function BookingForm({ preSelectedService, preSelectedStylist }: 
                 <NavButtons
                   step={step}
                   nextDisabled={isCustomPackage ? totalCustomCount === 0 : !selectedService}
-                  onNext={() => setStep(2)}
+                  onNext={() => goToStep(stylistStep)}
                 />
               </>
             )}
@@ -863,7 +977,7 @@ export default function BookingForm({ preSelectedService, preSelectedStylist }: 
         )}
 
         {/* ══ STEP 2 — Stylist ══ */}
-        {step === 2 && (
+        {step === stylistStep && (
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 24 }}>
               <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(201,151,59,0.1)", border: "1px solid rgba(201,151,59,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -872,7 +986,7 @@ export default function BookingForm({ preSelectedService, preSelectedStylist }: 
               <h2 style={{ fontSize: "1.05rem", fontWeight: 700, color: "var(--text-primary)" }}>Choose a Stylist</h2>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 14 }}>
+            <div className="booking-stylist-grid">
               {STYLISTS.map((s) => {
                 const selected = selectedStylist === s.id;
                 const unavail = !s.available;
@@ -918,12 +1032,12 @@ export default function BookingForm({ preSelectedService, preSelectedStylist }: 
                 );
               })}
             </div>
-            <NavButtons step={step} nextDisabled={!selectedStylist} onNext={() => setStep(3)} onBack={() => setStep(1)} />
+            <NavButtons step={step} nextDisabled={!selectedStylist} onNext={() => goToStep(dateStep)} onBack={() => goToStep(serviceStep)} />
           </div>
         )}
 
         {/* ══ STEP 3 — Date & Time ══ */}
-        {step === 3 && (
+        {step === dateStep && (
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 24 }}>
               <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(201,151,59,0.1)", border: "1px solid rgba(201,151,59,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -963,8 +1077,22 @@ export default function BookingForm({ preSelectedService, preSelectedStylist }: 
                 );
                 if (dynamicSlots.length === 0) {
                   return (
-                    <div style={{ padding: "24px 0", textAlign: "center", fontSize: "0.82rem", color: "var(--text-muted)", background: "rgba(255,255,255,0.02)", borderRadius: 12, border: "1px dashed var(--border-light)" }}>
-                      This stylist is not working on the selected day. Please choose a different date.
+                    <div style={{ padding: "24px", textAlign: "center", background: "rgba(255,255,255,0.02)", borderRadius: 12, border: "1px dashed var(--border-light)" }}>
+                      <AlertCircle style={{ width: 26, height: 26, color: "var(--gold)", margin: "0 auto 10px" }} />
+                      <p style={{ fontSize: "0.84rem", color: "var(--text-secondary)", marginBottom: 14 }}>
+                        This stylist is fully booked or unavailable on the selected day.
+                      </p>
+                      <button type="button" onClick={requestWaitlist} disabled={waitlistRequested} style={{
+                        display: "inline-flex", alignItems: "center", gap: 7,
+                        padding: "10px 15px", borderRadius: 10,
+                        border: "1px solid rgba(201,151,59,0.35)",
+                        background: waitlistRequested ? "rgba(52,211,153,0.1)" : "rgba(201,151,59,0.1)",
+                        color: waitlistRequested ? "#34d399" : "var(--gold)",
+                        fontWeight: 800, fontSize: "0.78rem", cursor: waitlistRequested ? "default" : "pointer"
+                      }}>
+                        {waitlistRequested ? <CheckCircle style={{ width: 14, height: 14 }} /> : <Clock style={{ width: 14, height: 14 }} />}
+                        {waitlistRequested ? "Waitlist Added" : "Notify When Available"}
+                      </button>
                     </div>
                   );
                 }
@@ -990,18 +1118,20 @@ export default function BookingForm({ preSelectedService, preSelectedStylist }: 
                 );
               })()}
             </div>
-            <NavButtons step={step} nextDisabled={!selectedDate || !selectedTime} onNext={() => setStep(4)} onBack={() => setStep(2)} />
+            <NavButtons step={step} nextDisabled={!selectedDate || !selectedTime} onNext={() => goToStep(detailsStep)} onBack={() => goToStep(stylistStep)} />
           </div>
         )}
 
         {/* ══ STEP 4 — Details ══ */}
-        {step === 4 && (
+        {step === detailsStep && (
           <form onSubmit={handleSubmit} noValidate>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 24 }}>
               <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(201,151,59,0.1)", border: "1px solid rgba(201,151,59,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <CheckCircle style={{ width: 16, height: 16, color: "var(--gold)" }} />
               </div>
-              <h2 style={{ fontSize: "1.05rem", fontWeight: 700, color: "var(--text-primary)" }}>Your Details</h2>
+              <h2 style={{ fontSize: "1.05rem", fontWeight: 700, color: "var(--text-primary)" }}>
+                {bookingAsAdmin ? "Client Details" : "Your Details"}
+              </h2>
             </div>
 
             {/* Summary card */}
@@ -1083,8 +1213,88 @@ export default function BookingForm({ preSelectedService, preSelectedStylist }: 
               </div>
             </div>
 
+            {bookingAsAdmin && !selectedAdminClientId && (
+              <div style={{ background: "rgba(255,255,255,0.025)", border: "1px solid var(--border-light)", borderRadius: 16, padding: "16px 18px", marginBottom: 22 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 12 }}>
+                  <div>
+                    <p style={{ fontSize: "0.67rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.15em", color: "var(--gold)", marginBottom: 4 }}>
+                      Select Client
+                    </p>
+                    <p style={{ fontSize: "0.76rem", color: "var(--text-muted)" }}>
+                      Choose an existing client or enter new client details below.
+                    </p>
+                  </div>
+                  {selectedAdminClientId && (
+                    <button type="button" onClick={clearAdminClient} style={{ border: "1px solid var(--border-light)", background: "var(--bg-secondary)", color: "var(--text-secondary)", borderRadius: 9, padding: "8px 11px", fontSize: "0.74rem", fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>
+                      New Client
+                    </button>
+                  )}
+                </div>
+
+                <div style={{ position: "relative", marginBottom: 12 }}>
+                  <Search style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", width: 14, height: 14, color: "var(--text-muted)" }} />
+                  <input
+                    type="text"
+                    value={adminClientSearch}
+                    onChange={(e) => setAdminClientSearch(e.target.value)}
+                    placeholder="Search client by name, email, or phone..."
+                    style={{
+                      width: "100%",
+                      background: "var(--bg-secondary)",
+                      border: "1.5px solid var(--border-light)",
+                      borderRadius: 11,
+                      padding: "11px 14px 11px 36px",
+                      fontSize: "0.84rem",
+                      color: "var(--text-primary)",
+                      outline: "none",
+                    }}
+                  />
+                </div>
+
+                {adminClientsLoading ? (
+                  <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", padding: "8px 0" }}>Loading clients...</p>
+                ) : filteredAdminClients.length === 0 ? (
+                  <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", padding: "8px 0" }}>No clients found. Add details manually below.</p>
+                ) : (
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))", gap: 8, maxHeight: 188, overflowY: "auto", paddingRight: 2 }}>
+                    {filteredAdminClients.slice(0, 10).map((client) => {
+                      const selected = selectedAdminClientId === client.id;
+                      return (
+                        <button
+                          key={client.id}
+                          type="button"
+                          onClick={() => selectAdminClient(client)}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 10,
+                            textAlign: "left",
+                            border: `1.5px solid ${selected ? "rgba(201,151,59,0.6)" : "var(--border-light)"}`,
+                            background: selected ? "rgba(201,151,59,0.08)" : "var(--bg-secondary)",
+                            borderRadius: 11,
+                            padding: "10px 12px",
+                            cursor: "pointer",
+                          }}
+                        >
+                          <div style={{ width: 32, height: 32, borderRadius: "50%", flexShrink: 0, background: selected ? "var(--grad-gold-btn)" : "var(--bg-card)", display: "flex", alignItems: "center", justifyContent: "center", color: selected ? "#0d0c0a" : "var(--text-muted)", fontSize: "0.78rem", fontWeight: 900 }}>
+                            {client.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div style={{ minWidth: 0, flex: 1 }}>
+                            <p style={{ fontSize: "0.8rem", fontWeight: 800, color: "var(--text-primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{client.name}</p>
+                            <p style={{ fontSize: "0.68rem", color: "var(--text-muted)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{client.email}</p>
+                            <p style={{ fontSize: "0.68rem", color: "var(--text-muted)" }}>{client.phone}</p>
+                          </div>
+                          {selected && <CheckCircle style={{ width: 15, height: 15, color: "var(--gold)", flexShrink: 0 }} />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Form fields */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16, marginBottom: 16 }}>
+            <div className="booking-fields-grid">
               {[
                 { label: "Full Name",     key: "name",  type: "text",  placeholder: "Fatima Khan",      inputMode: undefined as React.HTMLAttributes<HTMLInputElement>["inputMode"] },
                 { label: "Email Address", key: "email", type: "email", placeholder: "you@email.com",     inputMode: undefined as React.HTMLAttributes<HTMLInputElement>["inputMode"] },
@@ -1160,7 +1370,7 @@ export default function BookingForm({ preSelectedService, preSelectedStylist }: 
             <div style={{ display: "flex", justifyContent: "space-between", marginTop: 28 }}>
               <button
                 type="button"
-                onClick={() => setStep(3)}
+                onClick={() => goToStep(dateStep)}
                 style={{
                   display: "flex", alignItems: "center", gap: 6,
                   padding: "11px 22px", borderRadius: 11,

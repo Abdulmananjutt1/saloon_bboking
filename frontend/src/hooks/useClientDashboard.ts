@@ -5,6 +5,7 @@ import { ROUTES, type BookingStatus } from "@/constants";
 import { bookingsApi, chatApi, authApi } from "@/lib/api";
 import { buildWsUrl } from "@/lib/ws";
 import { getSession, clearSession, pushSessionToast, getToken, saveSession } from "@/lib/session";
+import { notificationService } from "@/services/notifications";
 
 export interface ClientBooking {
   id: string;
@@ -13,8 +14,10 @@ export interface ClientBooking {
   customerPhone: string;
   serviceId: string;
   serviceName: string;
+  service?: { name?: string };
   stylistId: string;
   stylistName: string;
+  stylist?: { name?: string };
   date: string;
   time: string;
   duration: number;
@@ -56,7 +59,10 @@ export function useClientDashboard() {
 
   // Unread count — messages from admin not yet seen
   const [unreadCount, setUnreadCount] = useState(0);
+  const [appointmentUnread, setAppointmentUnread] = useState(0);
   const chatOpenRef = useRef(false);
+  const statusMapRef = useRef<Record<string, string>>({});
+  const statusInitRef = useRef(false);
 
   const ws         = useRef<WebSocket | null>(null);
   const chatEndRef = useRef<HTMLDivElement | null>(null);
@@ -65,7 +71,39 @@ export function useClientDashboard() {
   const fetchBookings = useCallback(async (email: string) => {
     try {
       const data = await bookingsApi.getAll(undefined, email) as ApiResponse<ClientBooking[]>;
-      if (data.success) setBookings(data.data);
+      if (data.success) {
+        setBookings((prev) => {
+          const next = data.data;
+          if (statusInitRef.current) {
+            for (const b of next) {
+              const prevStatus = statusMapRef.current[b.id];
+              if (prevStatus && prevStatus !== b.status) {
+                const labels: Record<string, string> = {
+                  confirmed: "Booking confirmed",
+                  completed: "Visit completed",
+                  cancelled: "Booking cancelled",
+                  pending:   "Booking pending",
+                };
+                if (labels[b.status]) {
+                  notificationService.add({
+                    title: labels[b.status],
+                    body:  `${b.serviceName ?? "Appointment"} — ${b.date} at ${b.time}`,
+                    type:  "status",
+                    screen: "appointments",
+                    url:   "/dashboard/appointments",
+                    meta:  { bookingId: b.id },
+                  });
+                }
+              }
+              statusMapRef.current[b.id] = b.status;
+            }
+          } else {
+            next.forEach((b) => { statusMapRef.current[b.id] = b.status; });
+            statusInitRef.current = true;
+          }
+          return next;
+        });
+      }
     } catch { /* ignore */ }
     finally { setLoading(false); }
   }, []);
@@ -147,7 +185,24 @@ export function useClientDashboard() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chatMessages]);
 
-  // ── Mark chat as read ────────────────────────────────────────────────────────
+  // ── Poll bookings for status updates ─────────────────────────────────────
+  useEffect(() => {
+    if (!user) return;
+    const interval = setInterval(() => fetchBookings(user.email), 30_000);
+    return () => clearInterval(interval);
+  }, [user, fetchBookings]);
+
+  // ── Appointment notification count ────────────────────────────────────────
+  useEffect(() => {
+    const refresh = () => setAppointmentUnread(notificationService.getUnreadByScreen("appointments"));
+    refresh();
+    return notificationService.subscribe(refresh);
+  }, []);
+
+  const markAppointmentsRead = () => {
+    notificationService.markReadByScreen("appointments");
+    setAppointmentUnread(0);
+  };
   const markChatRead = () => {
     if (!user) return;
     chatOpenRef.current = true;
@@ -245,6 +300,7 @@ export function useClientDashboard() {
     chatMessages, newMessage, setNewMessage,
     wsStatus, sendMessage, chatEndRef,
     unreadCount, markChatRead, markChatClosed,
+    appointmentUnread, markAppointmentsRead,
     logout, updateProfile,
   };
 }
