@@ -1,3 +1,5 @@
+import { API_BASE_URL } from "../config";
+
 export interface ApiStylist {
   id: string;
   name: string;
@@ -13,10 +15,7 @@ export interface ApiStylist {
 
 export async function fetchStylists(): Promise<ApiStylist[]> {
   try {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api"}/stylists`,
-      { cache: "no-store" }
-    );
+    const res = await fetch(`${API_BASE_URL}/stylists`, { cache: "no-store" });
     const json = await res.json();
     return json.success ? json.data : [];
   } catch {

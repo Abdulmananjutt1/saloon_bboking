@@ -31,7 +31,9 @@ export function attachWebSocketServer(server: Server, port: number): WebSocketSe
   const wss = new WebSocketServer({ server, path: "/ws" });
 
   wss.on("connection", (ws, req) => {
-    const url    = new URL(req.url ?? "/", `http://localhost:${port}`);
+    const host = req.headers.host ?? `localhost:${port}`;
+    const proto = req.headers["x-forwarded-proto"]?.toString().split(",")[0] ?? "http";
+    const url = new URL(req.url ?? "/", `${proto}://${host}`);
     const role   = url.searchParams.get("role")   ?? "client";
     const roomId = url.searchParams.get("roomId") ?? "";
 

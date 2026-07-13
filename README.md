@@ -22,3 +22,7 @@ cd frontend && npm run dev
 ```
 
 See [frontend/README.md](./frontend/README.md) and [backend/README.md](./backend/README.md) for details.
+
+## Deployment
+
+Backend Railway + frontend Vercel setup is documented in [DEPLOYMENT.md](./DEPLOYMENT.md).
