@@ -1,14 +1,5 @@
-// ─────────────────────────────────────────────────────────
-//  Email Config — Resend + app URLs
-// ─────────────────────────────────────────────────────────
+import { ADMIN_EMAIL, APP_URL, EMAIL_FROM, RESEND_API_KEY } from "../config";
 
-export const RESEND_API_KEY = process.env.RESEND_API_KEY ?? "";
-
-export const EMAIL_FROM =
-  process.env.EMAIL_FROM ?? "Glamour Studio <onboarding@resend.dev>";
-
-export const APP_URL = process.env.APP_URL ?? "http://localhost:3000";
-
-export const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? "";
+export { ADMIN_EMAIL, APP_URL, EMAIL_FROM, RESEND_API_KEY };
 
 export const EMAIL_ENABLED = Boolean(RESEND_API_KEY);

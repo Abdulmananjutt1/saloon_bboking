@@ -7,9 +7,9 @@
 // ─────────────────────────────────────────────────────────
 
 import { useState, useEffect, useCallback } from "react";
+import { API_BASE_URL } from "@/lib/config";
 import { getSession } from "@/lib/session";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
 const VAPID_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "";
 
 /** Convert a base64 VAPID public key to Uint8Array for PushManager */
@@ -89,7 +89,7 @@ export function usePushNotifications(): UsePushNotificationsReturn {
       const userId  = session?.id ?? null;
 
       // Save to backend
-      await fetch(`${API_BASE}/push/subscribe`, {
+      await fetch(`${API_BASE_URL}/push/subscribe`, {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify({ subscription: sub.toJSON(), role, email, userId }),
@@ -112,7 +112,7 @@ export function usePushNotifications(): UsePushNotificationsReturn {
       const sub = await swReg.pushManager.getSubscription();
       if (sub) {
         // Remove from backend
-        await fetch(`${API_BASE}/push/unsubscribe`, {
+        await fetch(`${API_BASE_URL}/push/unsubscribe`, {
           method:  "DELETE",
           headers: { "Content-Type": "application/json" },
           body:    JSON.stringify({ endpoint: sub.endpoint }),
