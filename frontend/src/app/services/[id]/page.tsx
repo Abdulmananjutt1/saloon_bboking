@@ -8,15 +8,57 @@ import { SERVICES, STYLISTS } from "@/lib/data/salon";
 import { formatPrice, formatDuration } from "@/lib/utils";
 import { ROUTES, APP_PHONE } from "@/constants";
 import StarRating from "@/components/ui/StarRating";
-import { Clock, ChevronRight, Scissors, Users, Sparkles, Star, Calendar, ArrowRight } from "lucide-react";
+import {
+  ArrowRight,
+  BadgeCheck,
+  CalendarDays,
+  CheckCircle2,
+  ChevronRight,
+  Clock,
+  Coffee,
+  Gem,
+  Phone,
+  Scissors,
+  ShieldCheck,
+  Sparkles,
+  Star,
+  UserCheck,
+  Users,
+  Wand2,
+  type LucideIcon,
+} from "lucide-react";
 
-interface Props { params: Promise<{ id: string }> }
+interface Props {
+  params: Promise<{ id: string }>;
+}
+
+type IconItem = {
+  icon: LucideIcon;
+  title: string;
+  desc: string;
+};
+
+const INCLUDED_ITEMS: IconItem[] = [
+  { icon: UserCheck, title: "Professional Consultation", desc: "Personalized advice before the service begins." },
+  { icon: Gem, title: "Premium Products", desc: "Loreal, Wella and Kerastase level care." },
+  { icon: Wand2, title: "Expert Technique", desc: "Clean sectioning, styling and finishing detail." },
+  { icon: BadgeCheck, title: "Aftercare Guidance", desc: "Simple tips to maintain your look at home." },
+  { icon: ShieldCheck, title: "Satisfaction Support", desc: "We make sure the final result feels right." },
+  { icon: Coffee, title: "Refreshment Included", desc: "Relax with tea, coffee or juice during service." },
+];
+
+const BOOKING_BENEFITS: IconItem[] = [
+  { icon: CheckCircle2, title: "Flexible cancellation", desc: "Free cancellation up to 2 hours before." },
+  { icon: Gem, title: "Premium finish", desc: "Products and styling finish are included." },
+  { icon: UserCheck, title: "Certified stylists", desc: "Book with experienced salon professionals." },
+  { icon: Clock, title: "Easy scheduling", desc: "Choose a time that fits your day." },
+];
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
   const service = SERVICES.find((s) => s.id === id);
   if (!service) return { title: "Not Found" };
-  return { title: `${service.name} — Glamour Studio`, description: service.description };
+  return { title: `${service.name} - Glamour Studio`, description: service.description };
 }
 
 export async function generateStaticParams() {
@@ -29,412 +71,971 @@ export default async function ServiceDetailPage({ params }: Props) {
   if (!service) notFound();
 
   const relatedServices = SERVICES.filter((s) => s.category === service.category && s.id !== service.id).slice(0, 3);
-  const availableStylists = STYLISTS.filter((st) => st.available);
+  const availableStylists = STYLISTS.filter((st) => st.available).slice(0, 4);
+  const displayPrice = service.discountedPrice ?? service.price;
+  const discountPercent = service.discountedPrice
+    ? Math.round(((service.price - service.discountedPrice) / service.price) * 100)
+    : 0;
+  const serviceAudience = service.forGender === "unisex" ? "Everyone" : service.forGender === "male" ? "Men" : "Women";
 
   return (
     <>
       <Navbar />
-      <main className="site-main" style={{ background: "var(--bg-primary)", width: "100%", maxWidth: "100%", overflowX: "hidden" }}>
-        {/* ══════════════════════════════════════
-            HERO SECTION
-        ══════════════════════════════════════ */}
-        <section style={{ position: "relative", minHeight: "70vh", display: "flex", alignItems: "center", overflow: "hidden" }}>
-          {/* BG image */}
-          <div style={{ position: "absolute", inset: 0 }}>
-            <Image
-              src={service.image}
-              alt={service.name}
-              fill
-              className="object-cover"
-              style={{ transform: "scale(1.04)" }}
-              priority
-              sizes="100vw"
-            />
-            {/* Dark gradient overlay */}
-            <div className="hero-overlay-grad" style={{
-              position: "absolute", inset: 0,
-              background: "linear-gradient(to right, rgba(10,9,7,0.97) 0%, rgba(10,9,7,0.85) 50%, rgba(10,9,7,0.45) 100%)"
-            }} />
-            <div className="hero-overlay-bottom" style={{
-              position: "absolute", inset: 0,
-              background: "linear-gradient(to top, rgba(10,9,7,0.9) 0%, transparent 60%)"
-            }} />
+      <main className="service-detail-page site-main">
+        <style>{`
+          .service-detail-page {
+            width: 100%;
+            max-width: 100%;
+            overflow-x: hidden;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+          }
+
+          .service-detail-hero {
+            position: relative;
+            height: 540px;
+            min-height: 540px;
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+            background: #0d0c0a;
+            color: #fff7e8;
+          }
+
+          .service-detail-hero-bg {
+            position: absolute;
+            inset: 0;
+          }
+
+          .service-detail-hero-bg img {
+            transform: scale(1.04);
+            filter: saturate(0.95) contrast(1.05);
+          }
+
+          .service-detail-hero-bg::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background:
+              linear-gradient(90deg, rgba(8,7,6,0.96) 0%, rgba(8,7,6,0.86) 46%, rgba(8,7,6,0.36) 100%),
+              linear-gradient(180deg, rgba(8,7,6,0.2) 0%, rgba(8,7,6,0.88) 100%);
+            pointer-events: none;
+          }
+
+          .service-detail-hero-inner {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            padding-top: 108px;
+            padding-bottom: 52px;
+          }
+
+          .service-hero-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(300px, 380px);
+            gap: 44px;
+            align-items: end;
+          }
+
+          .service-breadcrumbs {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            flex-wrap: wrap;
+            margin-bottom: 18px;
+          }
+
+          .service-breadcrumbs a,
+          .service-breadcrumbs span {
+            color: rgba(255,247,232,0.64);
+            font-size: 0.75rem;
+            text-decoration: none;
+          }
+
+          .service-breadcrumbs span:last-child {
+            color: #fff7e8;
+            font-weight: 700;
+          }
+
+          .service-breadcrumbs svg {
+            color: rgba(255,247,232,0.42);
+          }
+
+          .service-category-pill,
+          .service-hero-meta span,
+          .service-offer-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+          }
+
+          .service-category-pill {
+            min-height: 34px;
+            padding: 0 16px;
+            border-radius: 999px;
+            border: 1px solid rgba(201,151,59,0.32);
+            background: rgba(201,151,59,0.12);
+            color: #e4bc6b;
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            margin-bottom: 14px;
+          }
+
+          .service-hero-title {
+            max-width: 780px;
+            color: #fff7e8;
+            margin: 0 0 12px;
+            font-size: clamp(2.05rem, 4.8vw, 3.45rem);
+            text-shadow: 0 12px 36px rgba(0,0,0,0.38);
+          }
+
+          .service-hero-description {
+            max-width: 690px;
+            color: rgba(255,247,232,0.72);
+            font-size: 0.92rem;
+            line-height: 1.65;
+            margin: 0 0 20px;
+          }
+
+          .service-hero-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 26px;
+          }
+
+          .service-hero-meta span {
+            min-height: 34px;
+            padding: 0 13px;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.12);
+            background: rgba(255,255,255,0.07);
+            color: rgba(255,247,232,0.78);
+            font-size: 0.82rem;
+            font-weight: 700;
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+          }
+
+          .service-hero-meta svg {
+            color: #d9ad57;
+          }
+
+          .service-hero-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+          }
+
+          .service-hero-actions .sal-btn {
+            min-height: 46px;
+          }
+
+          .service-hero-price-card {
+            border-radius: 20px;
+            border: 1px solid rgba(201,151,59,0.24);
+            background: rgba(13,12,10,0.76);
+            box-shadow: 0 24px 70px rgba(0,0,0,0.38);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 22px;
+          }
+
+          .service-price-label {
+            color: rgba(255,247,232,0.58);
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+          }
+
+          .service-price-row {
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 14px;
+          }
+
+          .service-price-main {
+            color: #e0b96a;
+            font-size: clamp(2.2rem, 4vw, 3rem);
+            font-weight: 900;
+            line-height: 1;
+            font-family: var(--font-display), Georgia, serif;
+          }
+
+          .service-price-old {
+            color: rgba(255,247,232,0.46);
+            font-size: 1rem;
+            text-decoration: line-through;
+          }
+
+          .service-offer-pill {
+            width: fit-content;
+            min-height: 32px;
+            padding: 0 11px;
+            border-radius: 999px;
+            background: var(--grad-gold-btn);
+            color: #0d0c0a;
+            font-size: 0.7rem;
+            font-weight: 900;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+          }
+
+          .service-price-note {
+            color: rgba(255,247,232,0.64);
+            font-size: 0.82rem;
+            line-height: 1.6;
+            margin: 18px 0 0;
+          }
+
+          .service-detail-content {
+            padding: 92px 0;
+            background:
+              linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+          }
+
+          .service-detail-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
+            gap: 32px;
+            align-items: start;
+          }
+
+          .service-content-stack {
+            display: grid;
+            gap: 28px;
+          }
+
+          .service-panel {
+            border-radius: 18px;
+            border: 1px solid var(--border-light);
+            background: var(--bg-card);
+            box-shadow: var(--shadow-card);
+            padding: 30px;
+          }
+
+          .service-panel-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 18px;
+            margin-bottom: 22px;
+          }
+
+          .service-panel-title {
+            color: var(--text-primary);
+            font-size: clamp(1.45rem, 2.5vw, 1.85rem);
+            line-height: 1.15;
+            margin: 0;
+            font-family: var(--font-display), Georgia, serif;
+          }
+
+          .service-panel-text {
+            color: var(--text-secondary);
+            font-size: 0.96rem;
+            line-height: 1.85;
+            margin: 0;
+          }
+
+          .service-panel-text + .service-panel-text {
+            margin-top: 18px;
+          }
+
+          .service-included-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 18px;
+          }
+
+          .service-feature-item {
+            display: grid;
+            grid-template-columns: 44px minmax(0, 1fr);
+            gap: 13px;
+            align-items: start;
+            padding: 16px;
+            border-radius: 14px;
+            border: 1px solid var(--border-light);
+            background: rgba(255,255,255,0.025);
+          }
+
+          .service-feature-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--gold);
+            background: rgba(201,151,59,0.11);
+            border: 1px solid rgba(201,151,59,0.2);
+          }
+
+          .service-feature-item h3 {
+            color: var(--text-primary);
+            font-size: 0.92rem;
+            line-height: 1.35;
+            margin: 0 0 5px;
+          }
+
+          .service-feature-item p {
+            color: var(--text-muted);
+            font-size: 0.78rem;
+            line-height: 1.55;
+            margin: 0;
+          }
+
+          .service-stylist-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 18px;
+          }
+
+          .service-stylist-card {
+            display: grid;
+            grid-template-columns: 64px minmax(0, 1fr);
+            gap: 14px;
+            align-items: center;
+            text-decoration: none;
+            padding: 16px;
+            border-radius: 16px;
+            border: 1px solid var(--border-light);
+            background: var(--bg-card2);
+            transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+          }
+
+          .service-stylist-card:hover {
+            transform: translateY(-3px);
+            border-color: var(--border-hover);
+            box-shadow: 0 18px 44px rgba(201,151,59,0.12);
+          }
+
+          .service-stylist-avatar {
+            position: relative;
+            display: block;
+            width: 64px;
+            height: 64px;
+          }
+
+          .service-stylist-avatar img {
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid rgba(201,151,59,0.22);
+          }
+
+          .service-available-dot {
+            position: absolute;
+            right: 2px;
+            bottom: 2px;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #34d399;
+            border: 2px solid var(--bg-card2);
+          }
+
+          .service-stylist-card h3 {
+            color: var(--text-primary);
+            font-size: 0.92rem;
+            margin: 0 0 3px;
+            line-height: 1.3;
+          }
+
+          .service-stylist-role {
+            color: var(--gold);
+            font-size: 0.72rem;
+            font-weight: 800;
+            margin-bottom: 6px;
+          }
+
+          .service-stylist-meta {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+          }
+
+          .service-stylist-meta span {
+            color: var(--text-muted);
+            font-size: 0.68rem;
+          }
+
+          .service-related-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 18px;
+          }
+
+          .service-related-card {
+            display: block;
+            overflow: hidden;
+            text-decoration: none;
+            border-radius: 16px;
+            border: 1px solid var(--border-light);
+            background: var(--bg-card2);
+            transition: transform 0.25s ease, border-color 0.25s ease;
+          }
+
+          .service-related-card:hover {
+            transform: translateY(-3px);
+            border-color: var(--border-hover);
+          }
+
+          .service-related-image {
+            position: relative;
+            display: block;
+            height: 132px;
+            overflow: hidden;
+          }
+
+          .service-related-image img {
+            object-fit: cover;
+          }
+
+          .service-related-image::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, transparent 30%, rgba(0,0,0,0.58) 100%);
+          }
+
+          .service-related-body {
+            display: block;
+            padding: 15px;
+          }
+
+          .service-related-body h3 {
+            color: var(--text-primary);
+            font-size: 0.86rem;
+            line-height: 1.35;
+            margin: 0 0 10px;
+          }
+
+          .service-related-price {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            color: var(--gold);
+            font-size: 0.78rem;
+            font-weight: 900;
+          }
+
+          .service-booking-sidebar {
+            position: sticky;
+            top: 100px;
+            border-radius: 18px;
+            border: 1px solid var(--border-light);
+            background: var(--bg-card);
+            box-shadow: var(--shadow-card);
+            padding: 26px;
+          }
+
+          .service-sidebar-price {
+            text-align: center;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border-light);
+            margin-bottom: 22px;
+          }
+
+          .service-sidebar-price small {
+            color: var(--text-muted);
+            display: block;
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            margin-bottom: 7px;
+          }
+
+          .service-sidebar-price strong {
+            color: var(--gold);
+            display: block;
+            font-size: clamp(2.1rem, 4vw, 2.7rem);
+            line-height: 1;
+            font-family: var(--font-display), Georgia, serif;
+          }
+
+          .service-sidebar-old {
+            color: var(--text-muted);
+            text-decoration: line-through;
+            font-size: 0.92rem;
+            margin-bottom: 6px;
+          }
+
+          .service-sidebar-duration {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            margin-top: 13px;
+            color: var(--text-secondary);
+            font-size: 0.82rem;
+            font-weight: 700;
+          }
+
+          .service-booking-sidebar .sal-btn {
+            width: 100%;
+            min-height: 52px;
+            margin-bottom: 22px;
+          }
+
+          .service-sidebar-list {
+            display: grid;
+            gap: 14px;
+            padding-top: 2px;
+          }
+
+          .service-sidebar-list h3 {
+            color: var(--text-primary);
+            font-size: 0.92rem;
+            margin: 0 0 2px;
+          }
+
+          .service-sidebar-benefit {
+            display: grid;
+            grid-template-columns: 34px minmax(0, 1fr);
+            gap: 11px;
+            align-items: start;
+          }
+
+          .service-sidebar-benefit span {
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--gold);
+            background: rgba(201,151,59,0.1);
+            border: 1px solid rgba(201,151,59,0.18);
+          }
+
+          .service-sidebar-benefit strong {
+            display: block;
+            color: var(--text-primary);
+            font-size: 0.8rem;
+            line-height: 1.3;
+          }
+
+          .service-sidebar-benefit p {
+            color: var(--text-muted);
+            font-size: 0.72rem;
+            line-height: 1.45;
+            margin: 3px 0 0;
+          }
+
+          .service-stats-card {
+            margin-top: 22px;
+            padding: 18px;
+            border-radius: 14px;
+            border: 1px solid rgba(201,151,59,0.16);
+            background: rgba(201,151,59,0.06);
+          }
+
+          .service-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+          }
+
+          .service-stat {
+            text-align: center;
+          }
+
+          .service-stat strong {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            color: var(--gold);
+            font-size: 1.35rem;
+            line-height: 1;
+            font-family: var(--font-display), Georgia, serif;
+          }
+
+          .service-stat span {
+            display: block;
+            color: var(--text-muted);
+            font-size: 0.7rem;
+            margin-top: 5px;
+          }
+
+          .service-final-cta {
+            position: relative;
+            overflow: hidden;
+            padding: 78px 0;
+            background: linear-gradient(135deg, #0d0c0a 0%, #1c1508 44%, #0d0c0a 100%);
+            color: #fff7e8;
+          }
+
+          .service-final-cta::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background:
+              radial-gradient(circle at 50% 50%, rgba(201,151,59,0.14), transparent 42%),
+              linear-gradient(90deg, rgba(255,255,255,0.04), transparent 40%, rgba(255,255,255,0.04));
+            pointer-events: none;
+          }
+
+          .service-final-cta-inner {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            max-width: 820px;
+            margin: 0 auto;
+          }
+
+          .service-final-cta h2 {
+            color: #fff7e8;
+            margin-bottom: 16px;
+          }
+
+          .service-final-cta p {
+            color: rgba(255,247,232,0.7);
+            max-width: 560px;
+            margin: 0 auto 30px;
+            line-height: 1.8;
+          }
+
+          .service-final-actions,
+          .service-cta-stats {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 14px;
+          }
+
+          .service-cta-stats {
+            max-width: 620px;
+            margin: 34px auto 0;
+            padding: 20px;
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.04);
+          }
+
+          .service-cta-stats div {
+            min-width: 120px;
+            text-align: center;
+          }
+
+          .service-cta-stats strong {
+            display: block;
+            color: #e0b96a;
+            font-size: 1.35rem;
+            line-height: 1;
+            font-family: var(--font-display), Georgia, serif;
+          }
+
+          .service-cta-stats span {
+            display: block;
+            color: rgba(255,247,232,0.58);
+            font-size: 0.76rem;
+            margin-top: 6px;
+          }
+
+          [data-theme="light"] .service-feature-item,
+          [data-theme="light"] .service-stylist-card,
+          [data-theme="light"] .service-related-card {
+            background: #fbf8f2;
+            border-color: rgba(0,0,0,0.08);
+          }
+
+          [data-theme="light"] .service-panel,
+          [data-theme="light"] .service-booking-sidebar {
+            background: #ffffff;
+            border-color: rgba(0,0,0,0.08);
+            box-shadow: 0 16px 45px rgba(44,31,13,0.08);
+          }
+
+          @media (max-width: 1080px) {
+            .service-detail-hero {
+              height: auto;
+              min-height: 540px;
+            }
+
+            .service-hero-grid,
+            .service-detail-layout {
+              grid-template-columns: 1fr;
+            }
+
+            .service-hero-price-card,
+            .service-booking-sidebar {
+              max-width: 520px;
+            }
+
+            .service-booking-sidebar {
+              position: static;
+            }
+          }
+
+          @media (max-width: 820px) {
+            .service-detail-hero {
+              min-height: auto;
+            }
+
+            .service-detail-hero-inner {
+              padding-top: 118px;
+              padding-bottom: 58px;
+            }
+
+            .service-detail-content {
+              padding: 64px 0;
+            }
+
+            .service-panel {
+              padding: 24px;
+            }
+
+            .service-included-grid,
+            .service-stylist-grid,
+            .service-related-grid {
+              grid-template-columns: 1fr;
+            }
+          }
+
+          @media (max-width: 520px) {
+            .service-detail-hero-inner {
+              padding-top: 104px;
+            }
+
+            .service-hero-actions .sal-btn,
+            .service-final-actions .sal-btn {
+              width: 100%;
+            }
+
+            .service-hero-price-card,
+            .service-booking-sidebar,
+            .service-panel {
+              padding: 20px;
+              border-radius: 16px;
+            }
+          }
+        `}</style>
+
+        <section className="service-detail-hero">
+          <div className="service-detail-hero-bg">
+            <Image src={service.image} alt={service.name} fill className="object-cover" priority sizes="100vw" />
           </div>
 
-          {/* Content */}
-          <div className="sal-container" style={{ position: "relative", paddingTop: 120, paddingBottom: 80, width: "100%" }}>
-            <div style={{ maxWidth: 800 }}>
-              {/* Breadcrumb */}
-              <div className="anim-up" style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 24, flexWrap: "wrap" }}>
-                <Link href={ROUTES.HOME} style={{ fontSize: "0.75rem", color: "var(--text-muted)", textDecoration: "none", transition: "color 0.2s" }}>
-                  Home
-                </Link>
-                <ChevronRight style={{ width: 12, height: 12, color: "var(--text-muted)" }} />
-                <Link href={ROUTES.SERVICES} style={{ fontSize: "0.75rem", color: "var(--text-muted)", textDecoration: "none", transition: "color 0.2s" }}>
-                  Services
-                </Link>
-                <ChevronRight style={{ width: 12, height: 12, color: "var(--text-muted)" }} />
-                <span style={{ fontSize: "0.75rem", color: "var(--text-primary)", fontWeight: 600 }}>{service.name}</span>
-              </div>
+          <div className="sal-container service-detail-hero-inner">
+            <div className="service-hero-grid">
+              <div>
+                <nav className="service-breadcrumbs" aria-label="Breadcrumb">
+                  <Link href={ROUTES.HOME}>Home</Link>
+                  <ChevronRight size={12} />
+                  <Link href={ROUTES.SERVICES}>Services</Link>
+                  <ChevronRight size={12} />
+                  <span>{service.name}</span>
+                </nav>
 
-              {/* Service badge */}
-              <div className="sal-glass-gold anim-up anim-d1" style={{
-                display: "inline-flex", alignItems: "center", gap: 8,
-                borderRadius: 99, padding: "6px 20px", marginBottom: 20
-              }}>
-                <Sparkles style={{ width: 14, height: 14, color: "var(--gold)" }} />
-                <span style={{ fontSize: "0.7rem", fontWeight: 700, color: "var(--gold-light)", textTransform: "uppercase", letterSpacing: "0.2em" }}>
-                  {service.category} Service
+                <span className="service-category-pill">
+                  <Scissors size={14} />
+                  {service.category} service
                 </span>
+
+                <h1 className="sal-h1 service-hero-title">{service.name}</h1>
+                <p className="service-hero-description">{service.description}</p>
+
+                <div className="service-hero-meta">
+                  <span>
+                    <Clock size={16} />
+                    {formatDuration(service.duration)}
+                  </span>
+                  <span>
+                    <Users size={16} />
+                    For {serviceAudience}
+                  </span>
+                  {service.popular && (
+                    <span>
+                      <Star size={16} />
+                      Popular choice
+                    </span>
+                  )}
+                </div>
+
+                <div className="service-hero-actions">
+                  <Link href={`${ROUTES.BOOK}?service=${service.id}`} className="sal-btn sal-btn-gold">
+                    <CalendarDays size={16} />
+                    Book This Service
+                  </Link>
+                  <Link href={ROUTES.SERVICES} className="sal-btn sal-btn-outline">
+                    Browse All Services
+                    <ArrowRight size={15} />
+                  </Link>
+                </div>
               </div>
 
-              {/* Main heading */}
-              <h1 className="sal-h1 anim-up anim-d2 hero-text-shadow" style={{ marginBottom: 16, fontSize: "clamp(2.6rem, 6vw, 4rem)" }}>
-                {service.name}
-              </h1>
-
-              {/* Service details */}
-              <div className="anim-up anim-d3" style={{ display: "flex", alignItems: "center", gap: 24, marginBottom: 32, flexWrap: "wrap" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--text-secondary)", fontSize: "0.9rem" }}>
-                  <Clock style={{ width: 16, height: 16, color: "var(--gold)" }} />
-                  {formatDuration(service.duration)}
+              <aside className="service-hero-price-card" aria-label="Service price summary">
+                <p className="service-price-label">Starting from</p>
+                <div className="service-price-row">
+                  <strong className="service-price-main">{formatPrice(displayPrice)}</strong>
+                  {service.discountedPrice && <span className="service-price-old">{formatPrice(service.price)}</span>}
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--text-secondary)", fontSize: "0.9rem" }}>
-                  <Users style={{ width: 16, height: 16, color: "var(--gold)" }} />
-                  For {service.forGender === "unisex" ? "Everyone" : service.forGender}
-                </div>
-                {service.popular && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, color: "var(--gold-light)", fontSize: "0.9rem", fontWeight: 600 }}>
-                    <Star style={{ width: 16, height: 16 }} />
-                    Popular Choice
-                  </div>
-                )}
-              </div>
-
-              {/* Price */}
-              <div className="anim-up anim-d3" style={{ marginBottom: 40 }}>
-                {service.discountedPrice ? (
-                  <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
-                    <span style={{ fontSize: "2.5rem", fontWeight: 900, color: "var(--gold-light)" }}>
-                      {formatPrice(service.discountedPrice)}
-                    </span>
-                    <span style={{ fontSize: "1.2rem", color: "var(--text-muted)", textDecoration: "line-through" }}>
-                      {formatPrice(service.price)}
-                    </span>
-                    <span style={{ 
-                      padding: "4px 10px", 
-                      borderRadius: 6, 
-                      background: "var(--grad-gold-btn)", 
-                      color: "#0d0c0a", 
-                      fontSize: "0.75rem", 
-                      fontWeight: 800,
-                      textTransform: "uppercase"
-                    }}>
-                      SAVE {Math.round((service.price - service.discountedPrice) / service.price * 100)}%
-                    </span>
-                  </div>
-                ) : (
-                  <span style={{ fontSize: "2.5rem", fontWeight: 900, color: "var(--gold-light)" }}>
-                    {formatPrice(service.price)}
+                {service.discountedPrice && (
+                  <span className="service-offer-pill">
+                    <Sparkles size={13} />
+                    Save {discountPercent}%
                   </span>
                 )}
-              </div>
-
-              {/* CTA Buttons */}
-              <div className="anim-up anim-d4" style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
-                <Link 
-                  href={`${ROUTES.BOOK}?service=${service.id}`} 
-                  className="sal-btn sal-btn-gold"
-                  style={{ padding: "14px 32px", fontSize: "0.9rem" }}
-                >
-                  <Calendar style={{ width: 16, height: 16 }} />
-                  Book This Service
-                </Link>
-                <Link 
-                  href={ROUTES.SERVICES} 
-                  className="sal-btn sal-btn-outline"
-                  style={{ padding: "14px 32px", fontSize: "0.9rem" }}
-                >
-                  <ArrowRight style={{ width: 16, height: 16 }} />
-                  Browse All Services
-                </Link>
-              </div>
+                <p className="service-price-note">
+                  Includes consultation, premium product finish and service-specific aftercare guidance.
+                </p>
+              </aside>
             </div>
           </div>
         </section>
 
-        {/* ══════════════════════════════════════
-            SERVICE DETAILS
-        ══════════════════════════════════════ */}
-        <section style={{ background: "var(--bg-primary)", padding: "100px 0" }}>
+        <section className="service-detail-content">
           <div className="sal-container">
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 360px", gap: 40 }}>
-              {/* Left Column - Main Content */}
-              <div>
-                {/* Service Description */}
-                <div className="sal-card" style={{ padding: 32, marginBottom: 32 }}>
-                  <h2 className="sal-h2" style={{ marginBottom: 20, fontSize: "1.8rem" }}>
-                    About This <span className="text-gold">Service</span>
-                  </h2>
-                  <p style={{ color: "var(--text-secondary)", fontSize: "1rem", lineHeight: 1.8, marginBottom: 24 }}>
-                    {service.description}
+            <div className="service-detail-layout">
+              <div className="service-content-stack">
+                <article className="service-panel">
+                  <div className="service-panel-header">
+                    <h2 className="service-panel-title">
+                      About This <span className="text-gold">Service</span>
+                    </h2>
+                  </div>
+                  <p className="service-panel-text">{service.description}</p>
+                  <p className="service-panel-text">
+                    Our stylists use a calm consultation process, premium products and precise finishing
+                    techniques so the final result feels polished, wearable and personal to you.
                   </p>
-                  <p style={{ color: "var(--text-secondary)", fontSize: "1rem", lineHeight: 1.8 }}>
-                    Our expert stylists use premium products and advanced techniques to ensure you receive the highest quality treatment. 
-                    Each session is personalized to your specific needs and preferences.
-                  </p>
-                </div>
+                </article>
 
-                {/* What's Included */}
-                <div className="sal-card" style={{ padding: 32, marginBottom: 32 }}>
-                  <h2 className="sal-h2" style={{ marginBottom: 24, fontSize: "1.8rem" }}>
-                    What&apos;s <span className="text-gold">Included</span>
-                  </h2>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-                    {[
-                      { icon: "👨‍⚕️", title: "Professional Consultation", desc: "Personalized advice from expert stylists" },
-                      { icon: "💎", title: "Premium Products", desc: "Loreal, Wella & Kerastase products" },
-                      { icon: "✨", title: "Expert Technique", desc: "Advanced styling methods" },
-                      { icon: "📝", title: "Aftercare Guidance", desc: "Tips to maintain your look" },
-                      { icon: "✅", title: "Satisfaction Guarantee", desc: "100% satisfaction or money back" },
-                      { icon: "☕", title: "Complimentary Refreshment", desc: "Tea, coffee or juice during service" },
-                    ].map((item) => (
-                      <div key={item.title} style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-                        <div style={{
-                          width: 44, height: 44, borderRadius: 12,
-                          background: "rgba(201,151,59,0.1)", border: "1px solid rgba(201,151,59,0.2)",
-                          display: "flex", alignItems: "center", justifyContent: "center",
-                          fontSize: "1.2rem", flexShrink: 0
-                        }}>
-                          {item.icon}
-                        </div>
+                <article className="service-panel">
+                  <div className="service-panel-header">
+                    <h2 className="service-panel-title">
+                      What&apos;s <span className="text-gold">Included</span>
+                    </h2>
+                  </div>
+                  <div className="service-included-grid">
+                    {INCLUDED_ITEMS.map(({ icon: Icon, title, desc }) => (
+                      <div key={title} className="service-feature-item">
+                        <span className="service-feature-icon">
+                          <Icon size={19} />
+                        </span>
                         <div>
-                          <h3 style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: 4 }}>
-                            {item.title}
-                          </h3>
-                          <p style={{ fontSize: "0.82rem", color: "var(--text-muted)", lineHeight: 1.5 }}>
-                            {item.desc}
-                          </p>
+                          <h3>{title}</h3>
+                          <p>{desc}</p>
                         </div>
                       </div>
                     ))}
                   </div>
-                </div>
+                </article>
 
-                {/* Available Stylists */}
-                <div className="sal-card" style={{ padding: 32, marginBottom: 32 }}>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
-                    <h2 className="sal-h2" style={{ fontSize: "1.8rem" }}>
+                <article className="service-panel">
+                  <div className="service-panel-header">
+                    <h2 className="service-panel-title">
                       Available <span className="text-gold">Stylists</span>
                     </h2>
-                    <Link 
-                      href={ROUTES.STYLISTS} 
-                      style={{ 
-                        fontSize: "0.8rem", 
-                        color: "var(--gold)", 
-                        textDecoration: "none",
-                        display: "flex", alignItems: "center", gap: 4
-                      }}
-                    >
-                      View All <ArrowRight style={{ width: 12, height: 12 }} />
+                    <Link href={ROUTES.STYLISTS} className="sal-btn sal-btn-ghost">
+                      View All
+                      <ArrowRight size={14} />
                     </Link>
                   </div>
-                  
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-                    {availableStylists.slice(0, 4).map((stylist) => (
-                      <Link 
+
+                  <div className="service-stylist-grid">
+                    {availableStylists.map((stylist) => (
+                      <Link
                         key={stylist.id}
                         href={`${ROUTES.BOOK}?service=${service.id}&stylist=${stylist.id}`}
-                        className="sal-card"
-                        style={{ 
-                          padding: 20, 
-                          textDecoration: "none",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 16,
-                          transition: "all 0.3s ease"
-                        }}
+                        className="service-stylist-card"
                       >
-                        <div style={{ position: "relative" }}>
-                          <Image 
-                            src={stylist.avatar} 
-                            alt={stylist.name} 
-                            width={70} 
-                            height={70} 
-                            style={{ borderRadius: "50%", objectFit: "cover" }}
-                          />
-                          {stylist.available && (
-                            <div style={{
-                              position: "absolute", bottom: 0, right: 0,
-                              width: 14, height: 14, borderRadius: "50%",
-                              background: "#4ade80", border: "2px solid var(--bg-card)"
-                            }} />
-                          )}
-                        </div>
-                        <div style={{ flex: 1 }}>
-                          <h3 style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: 4 }}>
-                            {stylist.name}
-                          </h3>
-                          <p style={{ fontSize: "0.75rem", color: "var(--gold)", fontWeight: 600, marginBottom: 6 }}>
-                            {stylist.role}
-                          </p>
-                          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                        <span className="service-stylist-avatar">
+                          <Image src={stylist.avatar} alt={stylist.name} fill sizes="64px" />
+                          <span className="service-available-dot" />
+                        </span>
+                        <div>
+                          <h3>{stylist.name}</h3>
+                          <p className="service-stylist-role">{stylist.role}</p>
+                          <span className="service-stylist-meta">
                             <StarRating rating={stylist.rating} size="sm" />
-                            <span style={{ fontSize: "0.7rem", color: "var(--text-muted)" }}>({stylist.reviewCount})</span>
-                          </div>
-                          <p style={{ fontSize: "0.7rem", color: "var(--text-muted)" }}>
-                            {stylist.experience} years experience
-                          </p>
+                            <span>{stylist.reviewCount.toLocaleString()} reviews</span>
+                            <span>{stylist.experience}y exp.</span>
+                          </span>
                         </div>
                       </Link>
                     ))}
                   </div>
-                </div>
+                </article>
 
-                {/* Related Services */}
                 {relatedServices.length > 0 && (
-                  <div className="sal-card" style={{ padding: 32 }}>
-                    <h2 className="sal-h2" style={{ marginBottom: 24, fontSize: "1.8rem" }}>
-                      Related <span className="text-gold">Services</span>
-                    </h2>
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }}>
-                      {relatedServices.map((rs) => (
-                        <Link 
-                          key={rs.id} 
-                          href={`${ROUTES.SERVICES}/${rs.id}`}
-                          className="sal-card"
-                          style={{ 
-                            textDecoration: "none",
-                            overflow: "hidden"
-                          }}
-                        >
-                          <div style={{ position: "relative", height: 120 }}>
-                            <Image 
-                              src={rs.image} 
-                              alt={rs.name} 
-                              fill
-                              style={{ objectFit: "cover", transition: "transform 0.3s ease" }}
-                              sizes="33vw"
-                            />
-                            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(10,9,7,0.85) 0%, transparent 60%)" }} />
-                          </div>
-                          <div style={{ padding: 16 }}>
-                            <h3 style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-primary)", marginBottom: 6, lineHeight: 1.3 }}>
-                              {rs.name}
-                            </h3>
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                              <span style={{ fontSize: "0.75rem", color: "var(--gold-light)", fontWeight: 700 }}>
-                                {formatPrice(rs.discountedPrice ?? rs.price)}
-                              </span>
-                              <ChevronRight style={{ width: 12, height: 12, color: "var(--text-muted)" }} />
-                            </div>
+                  <article className="service-panel">
+                    <div className="service-panel-header">
+                      <h2 className="service-panel-title">
+                        Related <span className="text-gold">Services</span>
+                      </h2>
+                    </div>
+                    <div className="service-related-grid">
+                      {relatedServices.map((related) => (
+                        <Link key={related.id} href={`${ROUTES.SERVICES}/${related.id}`} className="service-related-card">
+                          <span className="service-related-image">
+                            <Image src={related.image} alt={related.name} fill sizes="(max-width: 820px) 100vw, 25vw" />
+                          </span>
+                          <div className="service-related-body">
+                            <h3>{related.name}</h3>
+                            <span className="service-related-price">
+                              {formatPrice(related.discountedPrice ?? related.price)}
+                              <ChevronRight size={14} />
+                            </span>
                           </div>
                         </Link>
                       ))}
                     </div>
-                  </div>
+                  </article>
                 )}
               </div>
 
-              {/* Right Column - Booking Sidebar */}
-              <aside>
-                <div className="sal-card" style={{ padding: 32, position: "sticky", top: 100 }}>
-                  {/* Pricing */}
-                  <div style={{ textAlign: "center", marginBottom: 32 }}>
-                    {service.discountedPrice ? (
-                      <div>
-                        <p style={{ fontSize: "0.9rem", color: "var(--text-muted)", textDecoration: "line-through", marginBottom: 4 }}>
-                          {formatPrice(service.price)}
-                        </p>
-                        <p style={{ fontSize: "2.8rem", fontWeight: 900, color: "var(--gold-light)", marginBottom: 8 }}>
-                          {formatPrice(service.discountedPrice)}
-                        </p>
-                        <div style={{ 
-                          display: "inline-block",
-                          padding: "4px 12px", 
-                          borderRadius: 6, 
-                          background: "var(--grad-gold-btn)", 
-                          color: "#0d0c0a", 
-                          fontSize: "0.75rem", 
-                          fontWeight: 800,
-                          textTransform: "uppercase"
-                        }}>
-                          Limited Time Offer
-                        </div>
-                      </div>
-                    ) : (
-                      <p style={{ fontSize: "2.8rem", fontWeight: 900, color: "var(--gold-light)" }}>
-                        {formatPrice(service.price)}
-                      </p>
-                    )}
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 12 }}>
-                      <Clock style={{ width: 14, height: 14, color: "var(--text-muted)" }} />
-                      <span style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>
-                        {formatDuration(service.duration)}
+              <aside className="service-booking-sidebar">
+                <div className="service-sidebar-price">
+                  <small>Service price</small>
+                  {service.discountedPrice && <p className="service-sidebar-old">{formatPrice(service.price)}</p>}
+                  <strong>{formatPrice(displayPrice)}</strong>
+                  <span className="service-sidebar-duration">
+                    <Clock size={14} />
+                    {formatDuration(service.duration)}
+                  </span>
+                </div>
+
+                <Link href={`${ROUTES.BOOK}?service=${service.id}`} className="sal-btn sal-btn-gold">
+                  <CalendarDays size={17} />
+                  Book This Service Now
+                </Link>
+
+                <div className="service-sidebar-list">
+                  <h3>Why Book With Us</h3>
+                  {BOOKING_BENEFITS.map(({ icon: Icon, title, desc }) => (
+                    <div key={title} className="service-sidebar-benefit">
+                      <span>
+                        <Icon size={16} />
                       </span>
-                    </div>
-                  </div>
-
-                  {/* Book Now Button */}
-                  <Link
-                    href={`${ROUTES.BOOK}?service=${service.id}`}
-                    className="sal-btn sal-btn-gold"
-                    style={{ 
-                      width: "100%", 
-                      padding: "16px", 
-                      fontSize: "0.95rem", 
-                      fontWeight: 700,
-                      marginBottom: 20,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: 10
-                    }}
-                  >
-                    <Scissors style={{ width: 18, height: 18 }} />
-                    Book This Service Now
-                  </Link>
-
-                  {/* Features */}
-                  <div style={{ borderTop: "1px solid var(--border-light)", paddingTop: 24 }}>
-                    <h3 style={{ fontSize: "0.9rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: 16 }}>
-                      Why Book With Us
-                    </h3>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                      {[
-                        { icon: "✅", text: "Free cancellation up to 2 hours before" },
-                        { icon: "💎", text: "Premium products included" },
-                        { icon: "👨‍⚕️", text: "Expert certified stylists" },
-                        { icon: "🕒", text: "Flexible scheduling available" },
-                      ].map((item) => (
-                        <div key={item.text} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                          <span style={{ fontSize: "1rem" }}>{item.icon}</span>
-                          <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>{item.text}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Quick Stats */}
-                  <div style={{ 
-                    marginTop: 24, 
-                    padding: 20, 
-                    borderRadius: 12,
-                    background: "rgba(201,151,59,0.05)", 
-                    border: "1px solid rgba(201,151,59,0.1)"
-                  }}>
-                    <h3 style={{ fontSize: "0.9rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: 12, textAlign: "center" }}>
-                      Service Stats
-                    </h3>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                      <div style={{ textAlign: "center" }}>
-                        <div style={{ fontSize: "1.5rem", fontWeight: 900, color: "var(--gold-light)", marginBottom: 2 }}>4.9★</div>
-                        <div style={{ fontSize: "0.7rem", color: "var(--text-muted)" }}>Rating</div>
+                      <div>
+                        <strong>{title}</strong>
+                        <p>{desc}</p>
                       </div>
-                      <div style={{ textAlign: "center" }}>
-                        <div style={{ fontSize: "1.5rem", fontWeight: 900, color: "var(--gold-light)", marginBottom: 2 }}>500+</div>
-                        <div style={{ fontSize: "0.7rem", color: "var(--text-muted)" }}>Bookings</div>
-                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="service-stats-card">
+                  <div className="service-stats-grid">
+                    <div className="service-stat">
+                      <strong>
+                        4.9
+                        <Star size={15} fill="currentColor" />
+                      </strong>
+                      <span>Average rating</span>
+                    </div>
+                    <div className="service-stat">
+                      <strong>500+</strong>
+                      <span>Bookings</span>
                     </div>
                   </div>
                 </div>
@@ -443,67 +1044,37 @@ export default async function ServiceDetailPage({ params }: Props) {
           </div>
         </section>
 
-        {/* ══════════════════════════════════════
-            CTA SECTION
-        ══════════════════════════════════════ */}
-        <section className="cta-banner-bg" style={{
-          background: "linear-gradient(135deg, #0d0c0a 0%, #1c1508 40%, #0d0c0a 100%)",
-          padding: "80px 0", position: "relative", overflow: "hidden"
-        }}>
-          {/* Glow */}
-          <div style={{
-            position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)",
-            width: 700, height: 400,
-            background: "radial-gradient(ellipse, rgba(201,151,59,0.09) 0%, transparent 65%)",
-            pointerEvents: "none"
-          }} />
+        <section className="service-final-cta">
+          <div className="sal-container">
+            <div className="service-final-cta-inner">
+              <h2 className="sal-h2">
+                Ready to book <span className="text-gold">{service.name}</span>?
+              </h2>
+              <p>Choose your time online or call the studio for quick help with this service.</p>
 
-          <div className="sal-container" style={{ position: "relative", textAlign: "center" }}>
-            <h2 className="sal-h2" style={{ marginBottom: 16, fontSize: "clamp(2rem, 4vw, 3rem)" }}>
-              Ready to Experience <span className="text-gold">{service.name}</span>?
-            </h2>
-            <p style={{ color: "var(--text-secondary)", fontSize: "1rem", maxWidth: 500, margin: "0 auto 32px", lineHeight: 1.8 }}>
-              Book your appointment now and experience premium salon service with our expert stylists.
-            </p>
+              <div className="service-final-actions">
+                <Link href={`${ROUTES.BOOK}?service=${service.id}`} className="sal-btn sal-btn-gold">
+                  <CalendarDays size={17} />
+                  Book Now
+                </Link>
+                <Link href={`tel:${APP_PHONE}`} className="sal-btn sal-btn-outline">
+                  <Phone size={17} />
+                  Call to Book
+                </Link>
+              </div>
 
-            <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
-              <Link 
-                href={`${ROUTES.BOOK}?service=${service.id}`} 
-                className="sal-btn sal-btn-gold"
-                style={{ padding: "15px 36px", fontSize: "0.95rem", fontWeight: 700 }}
-              >
-                <Calendar style={{ width: 18, height: 18 }} />
-                Book Now — Free Cancellation
-              </Link>
-              <Link href={`tel:${APP_PHONE}`}
-                className="sal-btn sal-btn-outline"
-                style={{ padding: "15px 36px", fontSize: "0.95rem", fontWeight: 700 }}
-              >
-                📞 Call to Book
-              </Link>
-            </div>
-
-            <div style={{ 
-              marginTop: 40, 
-              padding: 24, 
-              borderRadius: 16,
-              background: "rgba(255,255,255,0.03)", 
-              border: "1px solid rgba(255,255,255,0.05)",
-              maxWidth: 600,
-              margin: "40px auto 0"
-            }}>
-              <div style={{ display: "flex", justifyContent: "center", gap: 32, flexWrap: "wrap" }}>
-                <div style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: "1.5rem", fontWeight: 900, color: "var(--gold-light)", marginBottom: 4 }}>24/7</div>
-                  <div style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>Online Booking</div>
+              <div className="service-cta-stats">
+                <div>
+                  <strong>24/7</strong>
+                  <span>Online booking</span>
                 </div>
-                <div style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: "1.5rem", fontWeight: 900, color: "var(--gold-light)", marginBottom: 4 }}>100%</div>
-                  <div style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>Satisfaction</div>
+                <div>
+                  <strong>100%</strong>
+                  <span>Service care</span>
                 </div>
-                <div style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: "1.5rem", fontWeight: 900, color: "var(--gold-light)", marginBottom: 4 }}>15+</div>
-                  <div style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>Expert Stylists</div>
+                <div>
+                  <strong>15+</strong>
+                  <span>Expert stylists</span>
                 </div>
               </div>
             </div>

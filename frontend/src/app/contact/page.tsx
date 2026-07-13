@@ -23,6 +23,7 @@ export default function ContactPage() {
       <Navbar />
       <main className="site-main" style={{ background: "var(--bg-primary)", width: "100%", maxWidth: "100%", overflowX: "hidden" }}>
         <PageHero
+          size="short"
           image="https://images.unsplash.com/photo-1560066984-138dadb4c035?w=1600&q=80"
           imageAlt="Contact Us"
           badge="We're Here to Help"

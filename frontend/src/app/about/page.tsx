@@ -39,6 +39,7 @@ export default async function AboutPage() {
       <Navbar />
       <main className="site-main" style={{ background: "var(--bg-primary)", width: "100%", maxWidth: "100%", overflowX: "hidden" }}>
         <PageHero
+          size="short"
           image="https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=1600&q=80"
           imageAlt="Our Salon Interior"
           badge="Since 2015 · Islamabad's #1"

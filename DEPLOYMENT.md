@@ -3,7 +3,7 @@
 This project is split into:
 
 - `backend/` - Express + TypeScript + Prisma/PostgreSQL, deploy to Railway.
-- `frontend/` - Next.js, deploy to Vercel.
+- `frontend/` - Next.js, deploy to your frontend host (Vercel, Netlify, or any Next.js host).
 
 ## Backend on Railway
 
@@ -63,13 +63,17 @@ Notes:
 - After Railway generates a domain, your API base URL will be `https://your-backend.up.railway.app/api`.
 - The WebSocket URL is derived automatically by the frontend as `wss://your-backend.up.railway.app/ws`.
 
-## Frontend on Vercel
+## Frontend Hosting Variables
 
-Set these on the Vercel frontend project:
+Set these on your frontend hosting project:
 
 ```env
 NEXT_PUBLIC_APP_URL=https://your-frontend-domain.com
 NEXT_PUBLIC_API_URL=https://your-backend.up.railway.app/api
+NEXT_PUBLIC_APP_PHONE=+923246293298
+NEXT_PUBLIC_WHATSAPP_PHONE=+923246293298
+NEXT_PUBLIC_HOME_VIDEO_URL=/assets/video.mp4
+NEXT_PUBLIC_HOME_VIDEO_POSTER=https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=1400&q=85
 NEXT_PUBLIC_VAPID_PUBLIC_KEY=
 ```
 
@@ -85,7 +89,7 @@ Use your real Railway backend domain in `NEXT_PUBLIC_API_URL`.
 https://your-backend.up.railway.app/health
 ```
 
-4. Put that backend domain into Vercel as `NEXT_PUBLIC_API_URL`.
+4. Put that backend domain into your frontend host as `NEXT_PUBLIC_API_URL`.
 5. Put the frontend domain into Railway as `APP_URL`, `FRONTEND_URL`, `FRONTEND_URLS`, and `CORS_ORIGINS`.
 6. Redeploy both services after env changes.
 

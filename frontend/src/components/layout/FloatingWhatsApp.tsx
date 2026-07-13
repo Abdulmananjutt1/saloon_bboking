@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { APP_NAME, APP_PHONE } from "@/constants";
+import { APP_NAME, WHATSAPP_PHONE } from "@/constants";
 
 const hiddenPrefixes = ["/admin", "/auth", "/dashboard"];
 
@@ -15,7 +15,7 @@ export default function FloatingWhatsApp() {
 
   if (shouldHide) return null;
 
-  const phone = whatsappPhoneNumber(APP_PHONE);
+  const phone = whatsappPhoneNumber(WHATSAPP_PHONE);
   const message = encodeURIComponent(`Hi ${APP_NAME}, I want to book an appointment.`);
 
   return (

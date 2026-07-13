@@ -6,6 +6,7 @@ import TestimonialsSection from "@/components/sections/TestimonialsSection";
 import {
   HomeHero,
   GoldTicker,
+  ExperienceVideoSection,
   AboutSection,
   ServicesPreviewSection,
   LuxuryBrandsSection,
@@ -31,6 +32,7 @@ export default function HomePage() {
         <LuxuryBrandsSection />
         <PricingSection />
         <GalleryPreviewSection />
+        <ExperienceVideoSection />
         <TeamSection stylists={featuredStylists} />
         <TestimonialsSection reviews={REVIEWS} animated />
         <CtaBanner />
