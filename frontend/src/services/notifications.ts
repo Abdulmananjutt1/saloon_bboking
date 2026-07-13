@@ -84,6 +84,16 @@ class NotificationService {
     this.emit();
   }
 
+  markReadWhere(predicate: (notification: AppNotification) => boolean): void {
+    const hasUnread = this.notifications.some((n) => !n.read && predicate(n));
+    if (!hasUnread) return;
+    this.notifications = this.notifications.map((n) =>
+      predicate(n) ? { ...n, read: true } : n
+    );
+    this.persist();
+    this.emit();
+  }
+
   markReadByScreen(screen: NotificationScreen): void {
     const hasUnread = this.notifications.some((n) => !n.read && n.screen === screen);
     if (!hasUnread) return;
@@ -96,6 +106,14 @@ class NotificationService {
 
   clearAll(): void {
     this.notifications = [];
+    this.persist();
+    this.emit();
+  }
+
+  clearWhere(predicate: (notification: AppNotification) => boolean): void {
+    const next = this.notifications.filter((n) => !predicate(n));
+    if (next.length === this.notifications.length) return;
+    this.notifications = next;
     this.persist();
     this.emit();
   }

@@ -41,7 +41,7 @@ export default function AdminChatPage() {
   };
 
   return (
-    <div style={{ maxWidth: 1280, margin: "0 auto", height: "calc(100vh - 100px)", display: "flex", flexDirection: "column" }}>
+    <div style={{ maxWidth: 1280, width: "100%", margin: "0 auto", height: "100%", minHeight: 0, display: "flex", flexDirection: "column" }}>
 
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, flexShrink: 0 }}>

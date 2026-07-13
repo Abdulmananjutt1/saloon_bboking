@@ -17,6 +17,8 @@ const router = Router();
 function formatBooking(b: any) {
   return {
     ...b,
+    serviceName: b.serviceName ?? b.service?.name ?? "Appointment",
+    stylistName: b.stylistName ?? b.stylist?.name ?? "Glamour Studio",
     date: b.date.toISOString().split("T")[0],
     status: b.status.toLowerCase(), // frontend expects lowercase (pending, confirmed, etc.)
   };
@@ -40,6 +42,10 @@ router.get("/", async (req: Request, res: Response) => {
 
     const bookings = await prisma.booking.findMany({
       where,
+      include: {
+        service: { select: { name: true } },
+        stylist: { select: { name: true } },
+      },
       orderBy: { createdAt: "desc" },
     });
 
@@ -59,6 +65,10 @@ router.get("/:id", async (req: Request, res: Response) => {
   try {
     const booking = await prisma.booking.findUnique({
       where: { id: req.params.id },
+      include: {
+        service: { select: { name: true } },
+        stylist: { select: { name: true } },
+      },
     });
     if (!booking) return res.status(404).json({ success: false, error: "Booking not found" });
     res.json({ success: true, data: formatBooking(booking) });
@@ -215,7 +225,10 @@ router.post("/", async (req: Request, res: Response) => {
       }
     });
 
-    res.status(201).json({ success: true, data: formatBooking(booking) });
+    res.status(201).json({
+      success: true,
+      data: formatBooking({ ...booking, service: { name: serviceName }, stylist: { name: stylist.name } }),
+    });
 
     // ── Push notification to admin ──────────────────────────
     notifyAdmins({
@@ -262,6 +275,10 @@ router.patch("/:id", async (req: Request, res: Response) => {
     const updated = await prisma.booking.update({
       where: { id: req.params.id },
       data: { status: status.toUpperCase() as BookingStatus },
+      include: {
+        service: { select: { name: true } },
+        stylist: { select: { name: true } },
+      },
     });
 
     res.json({ success: true, data: formatBooking(updated) });
@@ -469,7 +486,10 @@ router.post("/admin", requireAdmin, async (req: AuthRequest, res: Response) => {
       }
     });
 
-    res.status(201).json({ success: true, data: formatBooking(booking) });
+    res.status(201).json({
+      success: true,
+      data: formatBooking({ ...booking, service: { name: serviceName }, stylist: { name: stylist.name } }),
+    });
 
     notifyClient(targetUser.email, {
       title: "📅 Booking Created by Admin",

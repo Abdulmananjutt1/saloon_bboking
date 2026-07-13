@@ -46,6 +46,7 @@ interface StatsResponse {
 }
 
 const SEEN_BOOKINGS_KEY = "gs_seen_booking_ids";
+const isChatNotification = (n: AppNotification) => n.type === "chat" || n.screen === "chat";
 
 export function useNotifications() {
   const [notifs, setNotifs]     = useState<NotificationItem[]>([]);
@@ -57,11 +58,12 @@ export function useNotifications() {
   const seenBookingsRef           = useRef<Set<string> | null>(null);
 
   const refreshCounts = () => {
-    setUnread(notificationService.getUnreadCount());
+    const visibleUnread = notificationService.getAll().filter((n) => !n.read && !isChatNotification(n)).length;
+    setUnread(visibleUnread);
     setByScreen({
       bookings:      notificationService.getUnreadByScreen("bookings"),
       chat:          notificationService.getUnreadByScreen("chat"),
-      notifications: notificationService.getUnreadCount(),
+      notifications: visibleUnread,
       appointments:  notificationService.getUnreadByScreen("appointments"),
       system:        notificationService.getUnreadByScreen("system"),
     });
@@ -69,7 +71,7 @@ export function useNotifications() {
 
   useEffect(() => {
     const unsub = notificationService.subscribe((all) => {
-      setNotifs(all.map(toItem));
+      setNotifs(all.filter((n) => !isChatNotification(n)).map(toItem));
       refreshCounts();
     });
     return unsub;
@@ -160,12 +162,12 @@ export function useNotifications() {
     };
   }, []);
 
-  const markRead       = useCallback(() => notificationService.markAllRead(), []);
+  const markRead       = useCallback(() => notificationService.markReadWhere((n) => !isChatNotification(n)), []);
   const markScreenRead = useCallback(
     (screen: NotificationScreen) => notificationService.markReadByScreen(screen),
     []
   );
-  const clearAll       = useCallback(() => notificationService.clearAll(), []);
+  const clearAll       = useCallback(() => notificationService.clearWhere((n) => !isChatNotification(n)), []);
 
   return { notifs, unread, byScreen, loading, markRead, markScreenRead, clearAll };
 }

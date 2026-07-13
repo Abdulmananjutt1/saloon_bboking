@@ -14,8 +14,10 @@ export interface ClientBooking {
   customerPhone: string;
   serviceId: string;
   serviceName: string;
+  service?: { name?: string };
   stylistId: string;
   stylistName: string;
+  stylist?: { name?: string };
   date: string;
   time: string;
   duration: number;
@@ -88,7 +90,7 @@ export function useClientDashboard() {
                     body:  `${b.serviceName ?? "Appointment"} — ${b.date} at ${b.time}`,
                     type:  "status",
                     screen: "appointments",
-                    url:   "/dashboard?tab=appointments",
+                    url:   "/dashboard/appointments",
                     meta:  { bookingId: b.id },
                   });
                 }

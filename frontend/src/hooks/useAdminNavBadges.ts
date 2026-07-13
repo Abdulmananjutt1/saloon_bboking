@@ -19,7 +19,7 @@ export function useAdminNavBadges() {
     } else if (pathname.startsWith("/admin/chat")) {
       notificationService.markReadByScreen("chat");
     } else if (pathname.startsWith("/admin/notifications")) {
-      notificationService.markAllRead();
+      notificationService.markReadWhere((n) => n.type !== "chat" && n.screen !== "chat");
     }
   }, [pathname]);
 
