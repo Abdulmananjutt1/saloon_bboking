@@ -20,7 +20,7 @@ export default function AppointmentsPage() {
       </div>
 
       {loading ? (
-        <div aria-label="Loading appointments" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <div aria-label="Appointment placeholders" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {[0, 1].map((item) => (
             <div key={item} style={{ ...bookingRowStyle, minHeight: 92 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 20, flex: 1 }}>

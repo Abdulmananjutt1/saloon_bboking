@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
 import { ROUTES } from "@/constants";
 import { RedBadge } from "@/components/ui/RedBadge";
 import { TAB_ROUTES } from "./routes";
-import { bookingRowStyle, cancelBtnStyle, iconBoxStyle, pageSubtitleStyle, pageTitleStyle, statCardStyle, statusBadgeStyle } from "./styles";
+import { appointmentSkeletonBlockStyle, bookingRowStyle, cancelBtnStyle, iconBoxStyle, pageSubtitleStyle, pageTitleStyle, statCardStyle, statusBadgeStyle } from "./styles";
 import { BookingTimeline, ServiceMemoryCard } from "./shared";
 import { useDashboardContext } from "./DashboardContext";
 
@@ -46,7 +46,20 @@ export default function OverviewPage() {
         <section>
           <h2 style={{ fontSize: "1rem", fontWeight: 700, marginBottom: 18, fontFamily: "var(--font-display), Georgia, serif", letterSpacing: "-0.01em" }}>Upcoming Sessions</h2>
           {loading ? (
-            <p style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>Loading appointments...</p>
+            <div aria-hidden="true" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              {[0, 1, 2].map((item) => (
+                <div key={item} style={{ ...bookingRowStyle, minHeight: 86 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 16, flex: 1 }}>
+                    <span style={{ ...appointmentSkeletonBlockStyle, width: 50, height: 50, borderRadius: 12 }} />
+                    <div style={{ flex: 1, display: "grid", gap: 10 }}>
+                      <span style={{ ...appointmentSkeletonBlockStyle, width: "min(210px, 54%)", height: 15, borderRadius: 8 }} />
+                      <span style={{ ...appointmentSkeletonBlockStyle, width: "min(320px, 78%)", height: 12, borderRadius: 8 }} />
+                    </div>
+                  </div>
+                  <span style={{ ...appointmentSkeletonBlockStyle, width: 82, height: 26, borderRadius: 99 }} />
+                </div>
+              ))}
+            </div>
           ) : upcomingBookings.length === 0 ? (
             <div style={{ padding: "40px", borderRadius: 16, background: "rgba(255,255,255,0.02)", border: "1px dashed var(--border-light)", textAlign: "center" }}>
               <Clock3 style={{ width: 32, height: 32, color: "var(--text-muted)", margin: "0 auto 12px" }} />

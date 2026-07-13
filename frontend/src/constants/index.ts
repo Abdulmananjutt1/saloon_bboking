@@ -3,7 +3,7 @@ export const LOGO_SRC = "/assets/logo.png";
 export const APP_TAGLINE = "Where Style Meets Perfection";
 export const APP_DESCRIPTION =
   "Premium salon & spa services — haircuts, color, beard, facials, and more. Book your appointment in seconds.";
-export const APP_PHONE = "+92 300 1234567";
+export const APP_PHONE = "+923246293298";
 export const APP_EMAIL = "hello@glamourstudio.pk";
 export const APP_ADDRESS = "Plot 45, F-7 Markaz, Islamabad";
 export const APP_HOURS = "Mon–Sat: 9AM–9PM  |  Sun: 10AM–7PM";

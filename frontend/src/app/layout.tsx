@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, Raleway } from "next/font/google";
+import FloatingWhatsApp from "@/components/layout/FloatingWhatsApp";
 import ThemeProvider from "@/components/layout/ThemeProvider";
 import "./globals.css";
 
@@ -32,6 +33,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-full flex flex-col antialiased overflow-x-hidden w-full max-w-full" style={{ background: "var(--bg-primary)", color: "var(--text-primary)" }}>
         <ThemeProvider>
           {children}
+          <FloatingWhatsApp />
         </ThemeProvider>
       </body>
     </html>
