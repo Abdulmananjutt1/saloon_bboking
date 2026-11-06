@@ -1,21 +1,14 @@
-const DEFAULT_API_BASE_URL = "http://localhost:4000/api";
-
-function trimTrailingSlashes(value: string): string {
-  return value.replace(/\/+$/, "");
-}
-
 export function getApiBaseUrl(): string {
-  const raw = trimTrailingSlashes(process.env.NEXT_PUBLIC_API_URL?.trim() || DEFAULT_API_BASE_URL);
-  return raw.endsWith("/api") ? raw : `${raw}/api`;
+  // In unified mode, API is always on the same origin at /api
+  return "/api";
 }
 
 export function getWsBaseUrl(): string {
-  const apiUrl = new URL(getApiBaseUrl());
-  apiUrl.pathname = apiUrl.pathname.replace(/\/api$/, "/ws");
-  apiUrl.protocol = apiUrl.protocol === "https:" ? "wss:" : "ws:";
-  apiUrl.search = "";
-  apiUrl.hash = "";
-  return trimTrailingSlashes(apiUrl.toString());
+  // WebSocket connects to the same host — works in both dev and production
+  if (typeof window === "undefined") return "ws://localhost:3000/ws";
+  const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
+  return `${proto}//${window.location.host}/ws`;
 }
 
+// Used by api.ts and other frontend files
 export const API_BASE_URL = getApiBaseUrl();

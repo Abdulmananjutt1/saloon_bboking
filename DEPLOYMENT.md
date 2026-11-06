@@ -1,104 +1,85 @@
-# Deployment Guide
+# Glamour Studio — Deployment Guide
 
-This project is split into:
+## Architecture (Unified)
 
-- `backend/` - Express + TypeScript + Prisma/PostgreSQL, deploy to Railway.
-- `frontend/` - Next.js, deploy to your frontend host (Vercel, Netlify, or any Next.js host).
+This is a **unified Next.js application** — frontend and backend are merged into a single project in the `frontend/` folder. There is no separate backend server.
 
-## Backend on Railway
+- **API Routes**: `frontend/src/app/api/**` (Next.js Route Handlers)
+- **WebSocket**: Custom Next.js server at `frontend/server.ts`
+- **Database**: PostgreSQL via Prisma (adapter-pg)
+- **Email**: Resend
+- **Push Notifications**: Web Push (VAPID)
 
-1. Create a new Railway project from the GitHub repo.
-2. Add a PostgreSQL database service.
-3. Create/select the backend service and set the service root directory to:
+---
 
-```text
-backend
-```
-
-If Railway asks for a config file path from the repository root, use:
-
-```text
-/backend/railway.json
-```
-
-The backend service already includes `backend/railway.json` with:
-
-- Build command: `npm run build`
-- Pre-deploy command: `npm run db:deploy`
-- Start command: `npm start`
-- Healthcheck path: `/health`
-
-Railway's pre-deploy command is used for Prisma migrations before the app starts.
-
-### Railway Variables
-
-Set these on the Railway backend service:
-
-```env
-NODE_ENV=production
-DATABASE_URL=${{Postgres.DATABASE_URL}}
-JWT_SECRET=replace-with-a-long-random-secret
-APP_URL=https://your-frontend-domain.com
-FRONTEND_URL=https://your-frontend-domain.com
-FRONTEND_URLS=https://your-frontend-domain.com
-CORS_ORIGINS=https://your-frontend-domain.com
-DB_POOL_MAX=5
-```
-
-Optional:
-
-```env
-PUBLIC_BACKEND_URL=https://your-backend.up.railway.app
-RESEND_API_KEY=
-EMAIL_FROM=Glamour Studio <onboarding@resend.dev>
-ADMIN_EMAIL=
-VAPID_PUBLIC_KEY=
-VAPID_PRIVATE_KEY=
-VAPID_EMAIL=mailto:admin@glamourstudio.com
-```
-
-Notes:
-
-- Do not manually set `PORT` on Railway unless you have a specific reason. Railway provides it.
-- After Railway generates a domain, your API base URL will be `https://your-backend.up.railway.app/api`.
-- The WebSocket URL is derived automatically by the frontend as `wss://your-backend.up.railway.app/ws`.
-
-## Frontend Hosting Variables
-
-Set these on your frontend hosting project:
-
-```env
-NEXT_PUBLIC_APP_URL=https://your-frontend-domain.com
-NEXT_PUBLIC_API_URL=https://your-backend.up.railway.app/api
-NEXT_PUBLIC_APP_PHONE=+923246293298
-NEXT_PUBLIC_WHATSAPP_PHONE=+923246293298
-NEXT_PUBLIC_HOME_VIDEO_URL=/assets/video.mp4
-NEXT_PUBLIC_HOME_VIDEO_POSTER=https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=1400&q=85
-NEXT_PUBLIC_VAPID_PUBLIC_KEY=
-```
-
-Use your real Railway backend domain in `NEXT_PUBLIC_API_URL`.
-
-## First Deploy Checklist
-
-1. Deploy the Railway backend.
-2. Generate/open the Railway public domain.
-3. Confirm healthcheck:
-
-```text
-https://your-backend.up.railway.app/health
-```
-
-4. Put that backend domain into your frontend host as `NEXT_PUBLIC_API_URL`.
-5. Put the frontend domain into Railway as `APP_URL`, `FRONTEND_URL`, `FRONTEND_URLS`, and `CORS_ORIGINS`.
-6. Redeploy both services after env changes.
-
-## Database Seeding
-
-Migrations run automatically on Railway through `npm run db:deploy`.
-
-Seed data is not run automatically. If you need initial services/stylists/admin data, run the seed command once from Railway shell or locally against the Railway database:
+## Local Development
 
 ```bash
-npm run db:seed
+cd frontend
+npm install
+npx prisma generate
+npm run dev
 ```
+
+The app runs at `http://localhost:3000`  
+WebSocket runs on the same port at `ws://localhost:3000/ws`
+
+---
+
+## Environment Variables
+
+Copy `.env.example` to `.env` and fill in values:
+
+```bash
+cp frontend/.env.example frontend/.env
+```
+
+Required:
+- `DATABASE_URL` — PostgreSQL connection string
+- `JWT_SECRET` — Strong random secret for production
+
+Optional:
+- `RESEND_API_KEY` — Email notifications
+- `VAPID_*` — Push notifications
+
+---
+
+## Database
+
+```bash
+# Run migrations
+npm run db:deploy
+
+# Seed with initial data (admin user + services catalog)
+npm run db:seed
+
+# Open Prisma Studio
+npm run db:studio
+```
+
+---
+
+## Production Build
+
+```bash
+cd frontend
+npm run build
+npm start
+```
+
+For WebSocket support in production, the custom server is used automatically via `server.ts`.
+
+---
+
+## Deployment (Railway / Vercel)
+
+**Railway** (recommended — supports WebSocket):
+1. Set root directory to `frontend`
+2. Build command: `npm run build`
+3. Start command: `node dist/server.js` (after building server.ts)
+4. Add all environment variables from `.env.example`
+
+**Vercel** (no WebSocket — chat won't have real-time):
+1. Deploy `frontend/` folder
+2. API routes work normally
+3. Chat falls back to REST polling

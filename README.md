@@ -1,28 +1,30 @@
 # Glamour Studio — Salon Booking System
 
-Full-stack salon booking app with Next.js frontend and Express backend.
+Unified Next.js application — frontend and backend in a single project.
 
 ## Structure
 
 ```
 glamour-studio/
-├── frontend/    # Next.js 16 (port 3000)
-├── backend/     # Express + TypeScript (port 4000)
-└── .vscode/     # Workspace settings
+├── frontend/    # Next.js 16 (unified — API routes + WebSocket + UI)
+│   ├── src/app/api/   # All API routes (replaces Express backend)
+│   ├── src/server/    # Server-side code (db, auth, email, push)
+│   ├── prisma/        # Database schema & migrations
+│   └── server.ts      # Custom server (adds WebSocket support)
+└── DEPLOYMENT.md
 ```
 
 ## Quick Start
 
 ```bash
-# Terminal 1
-cd backend && npm run dev
-
-# Terminal 2
-cd frontend && npm run dev
+cd frontend
+npm install
+npx prisma generate
+npm run dev
 ```
 
-See [frontend/README.md](./frontend/README.md) and [backend/README.md](./backend/README.md) for details.
+App runs at `http://localhost:3000`
 
 ## Deployment
 
-Backend Railway + frontend Vercel setup is documented in [DEPLOYMENT.md](./DEPLOYMENT.md).
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for Railway/Vercel setup.

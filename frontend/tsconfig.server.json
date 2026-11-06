@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "noEmit": false,
+    "outDir": "dist",
+    "target": "ES2020",
+    "jsx": "react",
+    "incremental": false
+  },
+  "include": ["server.ts", "src/server/**/*.ts", "prisma/seed.ts"],
+  "exclude": ["node_modules", ".next"]
+}
