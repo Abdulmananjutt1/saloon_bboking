@@ -10,6 +10,8 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Server components can import from @/server/* (runs server-side only)
+  serverExternalPackages: ["@prisma/client", "@prisma/adapter-pg", "pg", "web-push", "resend"],
 };
 
 export default nextConfig;

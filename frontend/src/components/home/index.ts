@@ -1,5 +1,6 @@
 export { default as HomeHero } from "./HomeHero";
 export { default as GoldTicker } from "./GoldTicker";
+export { default as ExperienceVideoSection } from "./ExperienceVideoSection";
 export { default as AboutSection } from "./AboutSection";
 export { default as ServicesPreviewSection } from "./ServicesPreviewSection";
 export { default as LuxuryBrandsSection } from "./LuxuryBrandsSection";

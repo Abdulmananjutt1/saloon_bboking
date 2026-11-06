@@ -16,6 +16,7 @@ interface PageHeroProps {
   stats?: StatItem[];
   children?: React.ReactNode;
   align?: "left" | "center";
+  size?: "default" | "short";
 }
 
 export default function PageHero({
@@ -28,15 +29,15 @@ export default function PageHero({
   stats,
   children,
   align = "center",
+  size = "default",
 }: PageHeroProps) {
   const isCenter = align === "center";
 
   return (
     <section
-      className="page-hero-section"
+      className={`page-hero-section${size === "short" ? " page-hero-section--short" : ""}`}
       style={{
         position: "relative",
-        minHeight: "80vh",
         display: "flex",
         alignItems: "center",
         overflow: "hidden",
@@ -87,7 +88,7 @@ export default function PageHero({
 
       <div
         className="sal-container page-hero-inner"
-        style={{ position: "relative", paddingTop: 120, paddingBottom: 80, width: "100%" }}
+        style={{ position: "relative", width: "100%" }}
       >
         <div
           className="hero-content"
